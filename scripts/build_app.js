@@ -1,5 +1,5 @@
 // build_app.js
-// 100단계 퍼즐 데이터와 모바일 PWA 하이브리드 고음질 TTS 완벽 지원 index.html 생성기
+// 100단계 퍼즐 데이터와 W3C 표준 Web Speech API 완전 최적화 index.html 생성기
 const fs = require('fs');
 
 const puzzlesData = fs.readFileSync('scripts/puzzles_100.json', 'utf8');
@@ -46,7 +46,6 @@ const htmlContent = `<!DOCTYPE html>
       --font-scale: 1.0;            /* 3단 글자 크기 변수 (1.0 / 1.15 / 1.32) */
     }
 
-    /* 리셋 & 기본 설정 */
     * {
       box-sizing: border-box;
       margin: 0;
@@ -141,7 +140,7 @@ const htmlContent = `<!DOCTYPE html>
       align-items: center;
       justify-content: space-between;
       gap: 6px;
-      flex-wrap: nowrap; /* 줄바꿈 원천 차단 */
+      flex-wrap: nowrap;
     }
 
     .brand-title {
@@ -821,7 +820,7 @@ const htmlContent = `<!DOCTYPE html>
       </div>
       <!-- TTS 재생 안내 토스트 -->
       <div class="tts-toast" id="ttsToast">
-        🔊 문제를 읽어드립니다 (소리가 안 나면 기기 미디어 음량을 올려주세요)
+        🔊 문제 낭독 중입니다...
       </div>
 
       <!-- 정답 조합 슬롯 -->
@@ -882,7 +881,7 @@ const htmlContent = `<!DOCTYPE html>
     const PUZZLE_DATA = ${puzzlesData};
 
     // =========================================================
-    // 2. Web Audio API 사운드 엔진 (효과음 & 챠임벨)
+    // 2. Web Audio API 사운드 엔진 (효과음)
     // =========================================================
     class SoundEngine {
       constructor() {
@@ -1019,7 +1018,23 @@ const htmlContent = `<!DOCTYPE html>
     const soundText = document.getElementById('soundText');
 
     // =========================================================
-    // 5. 스테이지 / 레벨 드롭다운 구성 및 진행률 갱신
+    // 5. 음성 보이스 목록 초기화
+    // =========================================================
+    let availableVoices = [];
+    function refreshVoices() {
+      if ('speechSynthesis' in window) {
+        try {
+          availableVoices = window.speechSynthesis.getVoices() || [];
+        } catch (e) {}
+      }
+    }
+    refreshVoices();
+    if ('speechSynthesis' in window) {
+      window.speechSynthesis.onvoiceschanged = refreshVoices;
+    }
+
+    // =========================================================
+    // 6. 스테이지 / 레벨 드롭다운 구성 및 진행률 갱신
     // =========================================================
     function updateDropdowns() {
       selectStage.innerHTML = '';
@@ -1055,7 +1070,7 @@ const htmlContent = `<!DOCTYPE html>
     }
 
     // =========================================================
-    // 6. 퍼즐 로드 및 초기화
+    // 7. 퍼즐 로드 및 초기화
     // =========================================================
     function loadPuzzle(stage, level) {
       currentStage = stage;
@@ -1080,7 +1095,7 @@ const htmlContent = `<!DOCTYPE html>
     }
 
     // =========================================================
-    // 7. 7x7 격자판 렌더링
+    // 8. 7x7 격자판 렌더링
     // =========================================================
     function renderBoard() {
       boardGrid.innerHTML = '';
@@ -1476,88 +1491,71 @@ const htmlContent = `<!DOCTYPE html>
     });
 
     // =========================================================
-    // 11. 모바일 100% 호환 하이브리드 TTS 엔진 (HTML5 Audio + Native SpeechSynthesis)
-    // 기기 내 TTS 엔진 미설치/버그와 무관하게 100% 확실한 한국어 음성 출력!
+    // 11. W3C 표준 Web Speech API 완전 최적화
+    // 외부 API 차단(CORS) 없음, PC & 모바일 직접 낭독
     // =========================================================
-    let currentTtsAudio = null;
-    window.__currentUtterance = null;
-    let fallbackTimer = null;
+    window.__currentUtterance = null; // 안드로이드 GC 수거 방지용 전역 객체
+    let ttsResumeTimer = null;
 
-    function speakClue() {
-      // 이미 재생 중이면 정지
-      if (ttsSpeaking) {
-        stopTts();
-        return;
-      }
-
-      const activeWord = currentPuzzle.words[selectedWordIndex];
-      const textToRead = \`\${activeWord.dirKo} \${activeWord.num}번, \${activeWord.len}글자 문제입니다. \${activeWord.clue}\`;
-
-      // 1) UI 갱신 (말하기 상태 & 안내 토스트)
-      ttsSpeaking = true;
-      btnTts.classList.add('speaking');
-      btnTts.querySelector('span:last-child').textContent = '듣기 중지';
-      ttsToast.classList.add('active');
-
-      // 2) 1순위: Google Translate 고음질 한국어 원음 오디오 스트리밍 (스마트폰 미디어 채널로 100% 출력!)
-      // 사용자 탭 이벤트와 '동기' 컨텍스트에서 오디오 객체 즉시 생성 및 재생하여 모바일 Autoplay Policy 통과
-      try {
-        if (currentTtsAudio) {
-          currentTtsAudio.pause();
-          currentTtsAudio = null;
-        }
-
-        const ttsUrl = 'https://translate.google.com/translate_tts?ie=UTF-8&tl=ko&client=tw-ob&q=' + encodeURIComponent(textToRead);
-        const audio = new Audio(ttsUrl);
-        currentTtsAudio = audio;
-
-        audio.onended = () => {
-          stopTts();
-        };
-
-        audio.onerror = (e) => {
-          console.warn('Google TTS audio stream failed, fallback to native SpeechSynthesis:', e);
-          tryNativeSpeechSynthesis(textToRead);
-        };
-
-        const playPromise = audio.play();
-        if (playPromise !== undefined) {
-          playPromise.catch(err => {
-            console.warn('Audio play() rejected, fallback to native SpeechSynthesis:', err);
-            tryNativeSpeechSynthesis(textToRead);
-          });
-        }
-      } catch (err) {
-        console.warn('Audio constructor failed, fallback to native SpeechSynthesis:', err);
-        tryNativeSpeechSynthesis(textToRead);
-      }
+    function getKoreanVoice() {
+      refreshVoices();
+      if (!availableVoices.length) return null;
+      const ko = availableVoices.find(v => {
+        const l = (v.lang || '').replace('_', '-').toLowerCase();
+        const n = (v.name || '').toLowerCase();
+        return l === 'ko-kr' || l === 'ko' || l.startsWith('ko-') || n.includes('korean') || n.includes('한국');
+      });
+      return ko || null;
     }
 
-    // 2순위 폴백: 기기 내장 SpeechSynthesis (오프라인 상태 대비)
-    function tryNativeSpeechSynthesis(textToRead) {
+    function speakClue() {
       if (!('speechSynthesis' in window)) {
+        alert('사용하시는 기기나 브라우저에서 음성 안내(TTS) 기능을 지원하지 않습니다.');
+        return;
+      }
+
+      // 1) 이미 재생 중이면 즉시 중지 (토글 동작)
+      if (ttsSpeaking || window.speechSynthesis.speaking) {
         stopTts();
         return;
       }
 
       try {
+        // 소리 피드백 (AudioContext 언락 및 기기 미디어 볼륨 확인용)
+        if (soundEnabled) {
+          sound.playTap();
+        }
+
+        // 모바일 크롬 일시정지 해제
         if (window.speechSynthesis.paused) {
           window.speechSynthesis.resume();
         }
-        window.speechSynthesis.cancel();
+
+        const activeWord = currentPuzzle.words[selectedWordIndex];
+        if (!activeWord) return;
+        const textToRead = \`\${activeWord.dirKo} \${activeWord.num}번, \${activeWord.len}글자 문제입니다. \${activeWord.clue}\`;
 
         const utter = new SpeechSynthesisUtterance(textToRead);
         utter.lang = 'ko-KR';
-        utter.rate = 1.0;
+        utter.rate = 0.95; // 시니어 맞춤 또렷한 속도
         utter.pitch = 1.0;
+        utter.volume = 1.0;
+
+        // 최적 한국어 음성 바인딩 (없으면 시스템 기본 로캘 ko-KR 사용)
+        const koVoice = getKoreanVoice();
+        if (koVoice) {
+          utter.voice = koVoice;
+        }
 
         // 안드로이드 GC 수거 방지 전역 참조
         window.__currentUtterance = utter;
 
-        // 사용 가능한 한국어 음성 바인딩
-        const voices = window.speechSynthesis.getVoices() || [];
-        const koVoice = voices.find(v => (v.lang || '').includes('ko') || (v.name || '').includes('Korean') || (v.name || '').includes('한국어'));
-        if (koVoice) utter.voice = koVoice;
+        // UI 즉각 갱신
+        ttsSpeaking = true;
+        btnTts.classList.add('speaking');
+        btnTts.querySelector('span:last-child').textContent = '듣기 중지';
+        ttsToast.textContent = '🔊 문제를 읽어드립니다... (터치 시 중지)';
+        ttsToast.classList.add('active');
 
         utter.onstart = () => {
           ttsSpeaking = true;
@@ -1571,34 +1569,47 @@ const htmlContent = `<!DOCTYPE html>
         };
 
         utter.onerror = (e) => {
-          console.warn('Native SpeechSynthesis error:', e);
+          console.warn('SpeechSynthesis event error:', e);
           stopTts();
         };
 
+        // 크롬 계열 모바일 킵얼라이브 (일시 멈춤 방지)
+        if (ttsResumeTimer) clearInterval(ttsResumeTimer);
+        ttsResumeTimer = setInterval(() => {
+          if (ttsSpeaking && window.speechSynthesis.speaking) {
+            window.speechSynthesis.resume();
+          } else {
+            clearInterval(ttsResumeTimer);
+            ttsResumeTimer = null;
+          }
+        }, 3000);
+
+        // 사용자 제스처 동기 실행
         window.speechSynthesis.speak(utter);
-      } catch (e) {
-        console.error('Speech synthesis totally failed:', e);
+
+        // 12초 안전 타이머 (타임아웃 시 UI 복구)
+        setTimeout(() => {
+          if (ttsSpeaking && !window.speechSynthesis.speaking) {
+            stopTts();
+          }
+        }, 12000);
+
+      } catch (err) {
+        console.error('SpeechSynthesis execute error:', err);
         stopTts();
       }
     }
 
     function stopTts() {
-      // 오디오 스트림 정지
-      if (currentTtsAudio) {
-        try {
-          currentTtsAudio.pause();
-          currentTtsAudio.currentTime = 0;
-        } catch (e) {}
-        currentTtsAudio = null;
+      if (ttsResumeTimer) {
+        clearInterval(ttsResumeTimer);
+        ttsResumeTimer = null;
       }
-
-      // 네이티브 음성 정지
       if ('speechSynthesis' in window) {
         try {
           window.speechSynthesis.cancel();
         } catch (e) {}
       }
-
       ttsSpeaking = false;
       window.__currentUtterance = null;
       btnTts.classList.remove('speaking');
@@ -1727,7 +1738,6 @@ const htmlContent = `<!DOCTYPE html>
         navigator.serviceWorker.register('./sw.js')
           .then(reg => {
             console.log('ServiceWorker registered:', reg.scope);
-            // 새 버전 즉시 업데이트 확인
             reg.update();
           })
           .catch(err => console.warn('ServiceWorker registration failed:', err));
