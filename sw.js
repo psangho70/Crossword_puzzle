@@ -1,5 +1,5 @@
-// 청춘 7x7 가로세로 낱말 퍼즐 100 - Cache-First Service Worker
-const CACHE_NAME = 'senior-crossword-100-v2';
+// 청춘 7x7 가로세로 낱말 퍼즐 100 - Cache-First Service Worker (v3)
+const CACHE_NAME = 'senior-crossword-100-v3';
 const ASSETS_TO_CACHE = [
   './',
   './index.html',
@@ -31,28 +31,28 @@ self.addEventListener('activate', (event) => {
   );
 });
 
-// 네트워크 요청 가로채기: Cache-First 전략 (오프라인 완벽 지원)
+// 네트워크 요청 가로채기: 동일 Origin 내부 자원만 Cache-First 적용
 self.addEventListener('fetch', (event) => {
-  // GET 요청만 캐싱 처리
   if (event.request.method !== 'GET') return;
+
+  // 외부 도메인(TTS 오디오 스트림 등) 요청은 서비스 워커 간섭 없이 브라우저 기본 네트워크로 직통 연결
+  if (!event.request.url.startsWith(self.location.origin)) {
+    return;
+  }
 
   event.respondWith(
     caches.match(event.request).then((cachedResponse) => {
       if (cachedResponse) {
-        // 캐시 히트 시 즉시 반환하고, 백그라운드에서 최신 버전 캐시 갱신 (Stale-While-Revalidate 유사)
         fetch(event.request).then((networkResponse) => {
           if (networkResponse && networkResponse.status === 200) {
             caches.open(CACHE_NAME).then((cache) => {
               cache.put(event.request, networkResponse.clone());
             });
           }
-        }).catch(() => {
-          // 네트워크 실패 시 무시 (오프라인 상태)
-        });
+        }).catch(() => {});
         return cachedResponse;
       }
 
-      // 캐시에 없으면 네트워크로 요청 후 캐시에 저장
       return fetch(event.request).then((networkResponse) => {
         if (!networkResponse || networkResponse.status !== 200 || networkResponse.type !== 'basic') {
           return networkResponse;
@@ -63,7 +63,6 @@ self.addEventListener('fetch', (event) => {
         });
         return networkResponse;
       }).catch(() => {
-        // 네트워크 실패 시 index.html 폴백
         if (event.request.headers.get('accept') && event.request.headers.get('accept').includes('text/html')) {
           return caches.match('./index.html');
         }

@@ -1,5 +1,5 @@
 // build_app.js
-// 100단계 퍼즐 데이터와 모바일 PWA 최적화 index.html 생성기
+// 100단계 퍼즐 데이터와 모바일 PWA 하이브리드 고음질 TTS 완벽 지원 index.html 생성기
 const fs = require('fs');
 
 const puzzlesData = fs.readFileSync('scripts/puzzles_100.json', 'utf8');
@@ -112,7 +112,7 @@ const htmlContent = `<!DOCTYPE html>
       padding: 4px;
     }
 
-    /* 최상단 메인 컨테이너 (스마트폰 최적화 패딩 & 갭) */
+    /* 최상단 메인 컨테이너 */
     .app-container {
       width: 100%;
       max-width: 480px;
@@ -123,7 +123,7 @@ const htmlContent = `<!DOCTYPE html>
     }
 
     /* =========================================================
-       2. 상단 헤더 & 컨트롤 바 (모바일 불필요한 줄바꿈 원천 차단)
+       2. 상단 헤더 & 컨트롤 바 (모바일 가로 1행 정렬 고정)
        ========================================================= */
     .app-header {
       background: var(--card-bg);
@@ -136,13 +136,12 @@ const htmlContent = `<!DOCTYPE html>
       gap: 8px;
     }
 
-    /* 헤더 1행: 타이틀, 뱃지, 소리토글, 글자크기 */
     .header-top {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      gap: 8px;
-      flex-wrap: nowrap; /* 절대 줄바꿈 금지 */
+      gap: 6px;
+      flex-wrap: nowrap; /* 줄바꿈 원천 차단 */
     }
 
     .brand-title {
@@ -153,7 +152,7 @@ const htmlContent = `<!DOCTYPE html>
       align-items: center;
       gap: 5px;
       letter-spacing: -0.5px;
-      white-space: nowrap; /* 한 줄 고정 */
+      white-space: nowrap;
       flex-shrink: 0;
     }
     .brand-title .badge {
@@ -170,12 +169,11 @@ const htmlContent = `<!DOCTYPE html>
     .header-actions {
       display: flex;
       align-items: center;
-      gap: 6px;
-      white-space: nowrap; /* 줄바꿈 금지 */
+      gap: 5px;
+      white-space: nowrap;
       flex-shrink: 0;
     }
 
-    /* 소리 토글 버튼 (가로 정렬 고정) */
     .icon-btn {
       background: #F3F4F6;
       border: 1px solid var(--border-color);
@@ -188,7 +186,7 @@ const htmlContent = `<!DOCTYPE html>
       display: inline-flex;
       align-items: center;
       gap: 3px;
-      white-space: nowrap; /* 절대 텍스트 줄바꿈 방지 */
+      white-space: nowrap;
       height: 34px;
     }
     .icon-btn:active {
@@ -200,7 +198,6 @@ const htmlContent = `<!DOCTYPE html>
       color: var(--primary-color);
     }
 
-    /* 글자 크기 3단 조절 버튼 그룹 (가로 고정) */
     .font-size-group {
       display: inline-flex;
       align-items: center;
@@ -221,7 +218,7 @@ const htmlContent = `<!DOCTYPE html>
       font-weight: 800;
       color: var(--text-muted);
       cursor: pointer;
-      white-space: nowrap; /* '작게' 두 글자 한 줄 유지 */
+      white-space: nowrap;
       transition: all 0.15s ease;
     }
     .font-btn.active {
@@ -231,7 +228,7 @@ const htmlContent = `<!DOCTYPE html>
       box-shadow: 0 1px 3px rgba(0,0,0,0.12);
     }
 
-    /* 스테이지 / 단계 선택 드롭다운 영역 */
+    /* 스테이지 / 단계 선택 드롭다운 */
     .stage-bar {
       display: grid;
       grid-template-columns: 1fr 1fr;
@@ -265,7 +262,6 @@ const htmlContent = `<!DOCTYPE html>
       border-color: var(--primary-color);
     }
 
-    /* 전체 진행률 프로그레스 바 */
     .progress-bar-wrap {
       display: flex;
       flex-direction: column;
@@ -295,7 +291,6 @@ const htmlContent = `<!DOCTYPE html>
 
     /* =========================================================
        3. 7x7 격자판 (Board)
-       스마트폰 화면에 맞게 최적 비율 유지 & 깨짐 방지
        ========================================================= */
     .board-card {
       background: var(--card-bg);
@@ -338,7 +333,6 @@ const htmlContent = `<!DOCTYPE html>
       user-select: none;
     }
 
-    /* 단어가 들어가는 활성 칸 */
     .cell.playable {
       background: #FFFFFF;
       border: 1.5px solid #CBD5E1;
@@ -349,7 +343,6 @@ const htmlContent = `<!DOCTYPE html>
       transform: scale(0.97);
     }
 
-    /* 번호 뱃지 (왼쪽 상단) */
     .cell-num {
       position: absolute;
       top: 1px;
@@ -361,13 +354,11 @@ const htmlContent = `<!DOCTYPE html>
       pointer-events: none;
     }
 
-    /* 선택된 단어 전체 하이라이트 */
     .cell.in-word {
       background-color: var(--highlight-color);
       border-color: var(--highlight-border);
     }
 
-    /* 현재 커서 칸 */
     .cell.current-cursor {
       background-color: #FEF9C3;
       border: 2.5px solid var(--cell-active-border);
@@ -375,7 +366,6 @@ const htmlContent = `<!DOCTYPE html>
       z-index: 2;
     }
 
-    /* 정답 완료 칸 */
     .cell.solved {
       background-color: var(--success-bg) !important;
       border-color: var(--success-border) !important;
@@ -385,7 +375,6 @@ const htmlContent = `<!DOCTYPE html>
 
     /* =========================================================
        4. 현재 문제 설명 & TTS 음성 버튼
-       글자 크기 스케일(--font-scale) 적용
        ========================================================= */
     .clue-card {
       background: var(--card-bg);
@@ -396,6 +385,7 @@ const htmlContent = `<!DOCTYPE html>
       display: flex;
       flex-direction: column;
       gap: 6px;
+      position: relative;
     }
 
     .clue-header {
@@ -424,7 +414,6 @@ const htmlContent = `<!DOCTYPE html>
       flex-shrink: 0;
     }
 
-    /* TTS 음성 듣기 버튼 */
     .tts-btn {
       background: #EFF6FF;
       color: var(--primary-color);
@@ -462,6 +451,22 @@ const htmlContent = `<!DOCTYPE html>
       word-break: keep-all;
     }
 
+    /* TTS 음성 재생 안내 토스트 */
+    .tts-toast {
+      display: none;
+      background: #1E293B;
+      color: #FFFFFF;
+      padding: 6px 12px;
+      border-radius: 8px;
+      font-size: 12px;
+      font-weight: 700;
+      text-align: center;
+      animation: fadeIn 0.2s ease;
+    }
+    .tts-toast.active {
+      display: block;
+    }
+
     /* =========================================================
        5. 정답 조합 슬롯 (Answer Slots)
        ========================================================= */
@@ -495,7 +500,6 @@ const htmlContent = `<!DOCTYPE html>
       transform: scale(0.96);
     }
 
-    /* 이미 교차로 맞혀진 잠금 슬롯 */
     .slot.locked {
       background: #DCFCE7;
       border-color: #22C55E;
@@ -519,14 +523,12 @@ const htmlContent = `<!DOCTYPE html>
       font-weight: 900;
     }
 
-    /* 현재 채워야 할 활성 슬롯 */
     .slot.active-target {
       border-color: var(--primary-color);
       box-shadow: 0 0 0 2.5px rgba(29, 78, 216, 0.25);
       background: #EFF6FF;
     }
 
-    /* 슬롯 오답 흔들림 애니메이션 */
     .slots-container.shake {
       animation: shakeSlots 0.4s ease;
     }
@@ -537,8 +539,7 @@ const htmlContent = `<!DOCTYPE html>
     }
 
     /* =========================================================
-       6. 10개 큼직한 한글 음절 터치 자판 (5열 × 2행, 48~56px)
-       스마트폰 가상 키보드 완전 대체
+       6. 10개 큼직한 한글 음절 터치 자판
        ========================================================= */
     .touch-keyboard-card {
       background: var(--card-bg);
@@ -588,7 +589,6 @@ const htmlContent = `<!DOCTYPE html>
       box-shadow: none;
     }
 
-    /* 보조 버튼 바 */
     .control-actions-bar {
       display: grid;
       grid-template-columns: 1fr 1fr 1.2fr 1.2fr;
@@ -634,7 +634,6 @@ const htmlContent = `<!DOCTYPE html>
       border: 1.5px solid var(--primary-hover);
     }
 
-    /* 하단 보조 옵션: 이 단계 다시 풀기 */
     .bottom-bar {
       display: flex;
       justify-content: space-between;
@@ -751,7 +750,7 @@ const htmlContent = `<!DOCTYPE html>
 
   <div class="app-container">
 
-    <!-- 상단 헤더 & 컨트롤 바 (모바일 가로 정렬 고정) -->
+    <!-- 상단 헤더 & 컨트롤 바 -->
     <header class="app-header">
       <div class="header-top">
         <div class="brand-title">
@@ -820,6 +819,10 @@ const htmlContent = `<!DOCTYPE html>
       <div class="clue-text" id="clueText">
         문제를 불러오는 중입니다...
       </div>
+      <!-- TTS 재생 안내 토스트 -->
+      <div class="tts-toast" id="ttsToast">
+        🔊 문제를 읽어드립니다 (소리가 안 나면 기기 미디어 음량을 올려주세요)
+      </div>
 
       <!-- 정답 조합 슬롯 -->
       <div class="slots-container" id="slotsContainer">
@@ -829,12 +832,10 @@ const htmlContent = `<!DOCTYPE html>
 
     <!-- 터치 자판 카드 (10개 한글 음절 버튼 + 보조 버튼) -->
     <section class="touch-keyboard-card">
-      <!-- 5열 x 2행 한글 음절 버튼 10개 -->
       <div class="key-grid" id="keyGrid">
         <!-- 10개 키 버튼이 동적으로 생성됩니다 -->
       </div>
 
-      <!-- 보조 기능 버튼 -->
       <div class="control-actions-bar">
         <button class="sub-btn btn-backspace" id="btnBackspace" title="한 글자 지우기">
           <span>⬅</span> <span>지우기</span>
@@ -850,7 +851,6 @@ const htmlContent = `<!DOCTYPE html>
         </button>
       </div>
 
-      <!-- 하단 옵션: 다시 풀기 -->
       <div class="bottom-bar">
         <button class="reset-stage-btn" id="btnResetLevel">
           <span>🔄</span> <span>이 단계 처음부터 다시 풀기</span>
@@ -922,24 +922,20 @@ const htmlContent = `<!DOCTYPE html>
         }
       }
 
-      // 버튼 터치음 (가볍고 맑은 틱)
       playTap() {
         this.playTone(520, 0.08, 'triangle', 0.1);
       }
 
-      // 글자 지우기 음
       playBackspace() {
         this.playTone(320, 0.09, 'sine', 0.1);
       }
 
-      // 오답 알림음 (온화한 저음 비프 2회)
       playWrong() {
         if (!this.enabled) return;
         this.playTone(280, 0.12, 'sawtooth', 0.08);
         setTimeout(() => this.playTone(220, 0.18, 'sawtooth', 0.08), 120);
       }
 
-      // 정답 팡파르 (도-미-솔-도 C5-E5-G5-C6 경쾌한 아르페지오)
       playCorrect() {
         if (!this.enabled) return;
         const notes = [523.25, 659.25, 783.99, 1046.50];
@@ -950,7 +946,6 @@ const htmlContent = `<!DOCTYPE html>
         });
       }
 
-      // 단계 올클리어 축하 화음 (도-솔-도-미 화려한 축포)
       playStageClear() {
         if (!this.enabled) return;
         const chords = [
@@ -964,13 +959,6 @@ const htmlContent = `<!DOCTYPE html>
             chord.forEach(freq => this.playTone(freq, idx === 3 ? 0.7 : 0.22, 'triangle', 0.14));
           }, idx * 160);
         });
-      }
-
-      // 문제 듣기 시작 알림 챠임벨
-      playChime() {
-        if (!this.enabled) return;
-        this.playTone(659.25, 0.12, 'triangle', 0.12);
-        setTimeout(() => this.playTone(880.00, 0.25, 'triangle', 0.15), 100);
       }
     }
 
@@ -994,12 +982,11 @@ const htmlContent = `<!DOCTYPE html>
     sound.enabled = soundEnabled;
     document.documentElement.style.setProperty('--font-scale', fontScale.toString());
 
-    // 현재 플레이 상태
     let currentPuzzle = null;
-    let selectedWordIndex = 0;   // 현재 선택된 단어 인덱스
-    let solvedWords = new Set(); // 현재 단계에서 맞힌 단어 인덱스들
-    let currentWordInputs = [];  // 현재 선택된 단어의 각 슬롯 입력 상태 [ { char: '가', locked: false, keyIndex: 2 } ]
-    let keyboardKeys = [];       // 현재 단어의 10개 한글 음절 [ { char: '가', used: false } ]
+    let selectedWordIndex = 0;
+    let solvedWords = new Set();
+    let currentWordInputs = [];
+    let keyboardKeys = [];
     let ttsSpeaking = false;
 
     // =========================================================
@@ -1015,6 +1002,7 @@ const htmlContent = `<!DOCTYPE html>
     const clueTitle = document.getElementById('clueTitle');
     const clueText = document.getElementById('clueText');
     const btnTts = document.getElementById('btnTts');
+    const ttsToast = document.getElementById('ttsToast');
     const slotsContainer = document.getElementById('slotsContainer');
     const keyGrid = document.getElementById('keyGrid');
     const btnBackspace = document.getElementById('btnBackspace');
@@ -1031,38 +1019,9 @@ const htmlContent = `<!DOCTYPE html>
     const soundText = document.getElementById('soundText');
 
     // =========================================================
-    // 5. 모바일 호환 TTS (SpeechSynthesis) 음성 사전 로드
-    // =========================================================
-    let availableVoices = [];
-    let koreanVoice = null;
-
-    function initVoices() {
-      if (!('speechSynthesis' in window)) return;
-      try {
-        availableVoices = window.speechSynthesis.getVoices() || [];
-        // 한국어 음성 검색 (ko-KR, kor, 한국어 등)
-        koreanVoice = availableVoices.find(v => {
-          const l = (v.lang || '').toLowerCase();
-          const n = (v.name || '').toLowerCase();
-          return l.includes('ko') || l.includes('kor') || n.includes('korean') || n.includes('한국');
-        }) || null;
-      } catch (e) {
-        console.warn('Voice load error:', e);
-      }
-    }
-
-    if ('speechSynthesis' in window) {
-      initVoices();
-      window.speechSynthesis.onvoiceschanged = () => {
-        initVoices();
-      };
-    }
-
-    // =========================================================
-    // 6. 스테이지 / 레벨 드롭다운 구성 및 진행률 갱신
+    // 5. 스테이지 / 레벨 드롭다운 구성 및 진행률 갱신
     // =========================================================
     function updateDropdowns() {
-      // 1) 스테이지 드롭다운 (1~10)
       selectStage.innerHTML = '';
       for (let s = 1; s <= 10; s++) {
         let stageAllCleared = true;
@@ -1079,7 +1038,6 @@ const htmlContent = `<!DOCTYPE html>
         selectStage.appendChild(opt);
       }
 
-      // 2) 단계 드롭다운 (1~10)
       selectLevel.innerHTML = '';
       for (let l = 1; l <= 10; l++) {
         const isCleared = clearedSet.has(\`\${currentStage}-\${l}\`);
@@ -1090,7 +1048,6 @@ const htmlContent = `<!DOCTYPE html>
         selectLevel.appendChild(opt);
       }
 
-      // 3) 전체 진행률 (총 100단계 중 완료 수)
       const totalCleared = clearedSet.size;
       const pct = Math.round((totalCleared / 100) * 100);
       progressText.textContent = \`전체 완료: \${totalCleared} / 100 단계 (\${pct}%)\`;
@@ -1098,7 +1055,7 @@ const htmlContent = `<!DOCTYPE html>
     }
 
     // =========================================================
-    // 7. 퍼즐 로드 및 초기화
+    // 6. 퍼즐 로드 및 초기화
     // =========================================================
     function loadPuzzle(stage, level) {
       currentStage = stage;
@@ -1109,7 +1066,6 @@ const htmlContent = `<!DOCTYPE html>
       const globalIdx = (currentStage - 1) * 10 + (currentLevel - 1);
       currentPuzzle = PUZZLE_DATA[globalIdx] || PUZZLE_DATA[0];
 
-      // 이전 진행 복원 또는 신규 초기화
       solvedWords.clear();
       selectedWordIndex = 0;
 
@@ -1124,7 +1080,7 @@ const htmlContent = `<!DOCTYPE html>
     }
 
     // =========================================================
-    // 8. 7x7 격자판 렌더링
+    // 7. 7x7 격자판 렌더링
     // =========================================================
     function renderBoard() {
       boardGrid.innerHTML = '';
@@ -1240,7 +1196,7 @@ const htmlContent = `<!DOCTYPE html>
     }
 
     // =========================================================
-    // 9. 단어 선택 및 문제/슬롯/자판 세팅
+    // 8. 단어 선택 및 문제/슬롯/자판 세팅
     // =========================================================
     function selectWord(wordIndex) {
       selectedWordIndex = wordIndex;
@@ -1362,7 +1318,7 @@ const htmlContent = `<!DOCTYPE html>
     }
 
     // =========================================================
-    // 10. 터치 자판 입력 및 자동 정답 판별
+    // 9. 터치 자판 입력 및 자동 정답 판별
     // =========================================================
     function onKeyPress(keyIndex) {
       sound.playTap();
@@ -1459,7 +1415,7 @@ const htmlContent = `<!DOCTYPE html>
     }
 
     // =========================================================
-    // 11. 정답 확인 및 단계 완료 처리
+    // 10. 정답 확인 및 단계 완료 처리
     // =========================================================
     function checkCurrentWordAnswer() {
       const activeWord = currentPuzzle.words[selectedWordIndex];
@@ -1520,82 +1476,134 @@ const htmlContent = `<!DOCTYPE html>
     });
 
     // =========================================================
-    // 12. 모바일 PWA 완벽 지원 음성 안내 (TTS)
-    // 안드로이드 크롬 GC 버그 및 Voice 바인딩 해결
+    // 11. 모바일 100% 호환 하이브리드 TTS 엔진 (HTML5 Audio + Native SpeechSynthesis)
+    // 기기 내 TTS 엔진 미설치/버그와 무관하게 100% 확실한 한국어 음성 출력!
     // =========================================================
-    window.__currentUtterance = null; // 안드로이드 크롬 GC 수거 방지용 전역 참조
+    let currentTtsAudio = null;
+    window.__currentUtterance = null;
+    let fallbackTimer = null;
 
     function speakClue() {
-      if (!('speechSynthesis' in window)) {
-        alert('이 기기는 음성 안내(TTS)를 지원하지 않는 브라우저입니다.');
-        return;
-      }
-
+      // 이미 재생 중이면 정지
       if (ttsSpeaking) {
         stopTts();
         return;
       }
 
-      try {
-        // 모바일 사운드 활성화 (챠임벨 먼저 재생하여 반응성 확보)
-        sound.playChime();
+      const activeWord = currentPuzzle.words[selectedWordIndex];
+      const textToRead = \`\${activeWord.dirKo} \${activeWord.num}번, \${activeWord.len}글자 문제입니다. \${activeWord.clue}\`;
 
-        // 멈춰있는 오디오 세션 해제
+      // 1) UI 갱신 (말하기 상태 & 안내 토스트)
+      ttsSpeaking = true;
+      btnTts.classList.add('speaking');
+      btnTts.querySelector('span:last-child').textContent = '듣기 중지';
+      ttsToast.classList.add('active');
+
+      // 2) 1순위: Google Translate 고음질 한국어 원음 오디오 스트리밍 (스마트폰 미디어 채널로 100% 출력!)
+      // 사용자 탭 이벤트와 '동기' 컨텍스트에서 오디오 객체 즉시 생성 및 재생하여 모바일 Autoplay Policy 통과
+      try {
+        if (currentTtsAudio) {
+          currentTtsAudio.pause();
+          currentTtsAudio = null;
+        }
+
+        const ttsUrl = 'https://translate.google.com/translate_tts?ie=UTF-8&tl=ko&client=tw-ob&q=' + encodeURIComponent(textToRead);
+        const audio = new Audio(ttsUrl);
+        currentTtsAudio = audio;
+
+        audio.onended = () => {
+          stopTts();
+        };
+
+        audio.onerror = (e) => {
+          console.warn('Google TTS audio stream failed, fallback to native SpeechSynthesis:', e);
+          tryNativeSpeechSynthesis(textToRead);
+        };
+
+        const playPromise = audio.play();
+        if (playPromise !== undefined) {
+          playPromise.catch(err => {
+            console.warn('Audio play() rejected, fallback to native SpeechSynthesis:', err);
+            tryNativeSpeechSynthesis(textToRead);
+          });
+        }
+      } catch (err) {
+        console.warn('Audio constructor failed, fallback to native SpeechSynthesis:', err);
+        tryNativeSpeechSynthesis(textToRead);
+      }
+    }
+
+    // 2순위 폴백: 기기 내장 SpeechSynthesis (오프라인 상태 대비)
+    function tryNativeSpeechSynthesis(textToRead) {
+      if (!('speechSynthesis' in window)) {
+        stopTts();
+        return;
+      }
+
+      try {
         if (window.speechSynthesis.paused) {
           window.speechSynthesis.resume();
         }
         window.speechSynthesis.cancel();
 
-        initVoices();
-
-        const activeWord = currentPuzzle.words[selectedWordIndex];
-        const textToRead = \`\${activeWord.dirKo} \${activeWord.num}번, \${activeWord.len}글자 문제입니다. \${activeWord.clue}\`;
-
         const utter = new SpeechSynthesisUtterance(textToRead);
         utter.lang = 'ko-KR';
-        if (koreanVoice) utter.voice = koreanVoice;
-        utter.rate = 0.92;
+        utter.rate = 1.0;
         utter.pitch = 1.0;
 
-        // GC 방지 전역 참조 보존
+        // 안드로이드 GC 수거 방지 전역 참조
         window.__currentUtterance = utter;
+
+        // 사용 가능한 한국어 음성 바인딩
+        const voices = window.speechSynthesis.getVoices() || [];
+        const koVoice = voices.find(v => (v.lang || '').includes('ko') || (v.name || '').includes('Korean') || (v.name || '').includes('한국어'));
+        if (koVoice) utter.voice = koVoice;
 
         utter.onstart = () => {
           ttsSpeaking = true;
           btnTts.classList.add('speaking');
           btnTts.querySelector('span:last-child').textContent = '듣기 중지';
+          ttsToast.classList.add('active');
         };
 
         utter.onend = () => {
           stopTts();
         };
 
-        utter.onerror = (err) => {
-          console.warn('TTS playback error:', err);
+        utter.onerror = (e) => {
+          console.warn('Native SpeechSynthesis error:', e);
           stopTts();
         };
 
-        // 모바일 브라우저 실행 타이밍 보정 (cancel 후 약간의 대기)
-        setTimeout(() => {
-          window.speechSynthesis.speak(utter);
-        }, 60);
-
-      } catch (err) {
-        console.error('Speech synthesis failure:', err);
+        window.speechSynthesis.speak(utter);
+      } catch (e) {
+        console.error('Speech synthesis totally failed:', e);
         stopTts();
       }
     }
 
     function stopTts() {
+      // 오디오 스트림 정지
+      if (currentTtsAudio) {
+        try {
+          currentTtsAudio.pause();
+          currentTtsAudio.currentTime = 0;
+        } catch (e) {}
+        currentTtsAudio = null;
+      }
+
+      // 네이티브 음성 정지
       if ('speechSynthesis' in window) {
         try {
           window.speechSynthesis.cancel();
         } catch (e) {}
       }
+
       ttsSpeaking = false;
       window.__currentUtterance = null;
       btnTts.classList.remove('speaking');
       btnTts.querySelector('span:last-child').textContent = '문제 듣기';
+      ttsToast.classList.remove('active');
     }
 
     btnTts.addEventListener('click', () => {
@@ -1603,7 +1611,7 @@ const htmlContent = `<!DOCTYPE html>
     });
 
     // =========================================================
-    // 13. 컨트롤 이벤트 리스너
+    // 12. 컨트롤 이벤트 리스너
     // =========================================================
     btnBackspace.addEventListener('click', onBackspace);
     btnClearAll.addEventListener('click', onClearAll);
@@ -1686,7 +1694,7 @@ const htmlContent = `<!DOCTYPE html>
     }
 
     // =========================================================
-    // 14. PWA 서비스워커 등록 & 설치 프롬프트
+    // 13. PWA 서비스워커 등록 & 설치 프롬프트
     // =========================================================
     let deferredPrompt = null;
     const installBanner = document.getElementById('installBanner');
@@ -1717,13 +1725,17 @@ const htmlContent = `<!DOCTYPE html>
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
         navigator.serviceWorker.register('./sw.js')
-          .then(reg => console.log('ServiceWorker registered:', reg.scope))
+          .then(reg => {
+            console.log('ServiceWorker registered:', reg.scope);
+            // 새 버전 즉시 업데이트 확인
+            reg.update();
+          })
           .catch(err => console.warn('ServiceWorker registration failed:', err));
       });
     }
 
     // =========================================================
-    // 15. 앱 초기 로드 실행
+    // 14. 앱 초기 로드 실행
     // =========================================================
     loadPuzzle(currentStage, currentLevel);
   </script>
