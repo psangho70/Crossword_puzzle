@@ -14,6 +14,35 @@ const l5 = require('./level5');
 const lExtra = require('./level_extra');
 const lExtra2 = require('./level_extra2');
 const lExtra3 = require('./level_extra3');
+const lExtra4 = require('./level_extra4');
+const lExtra5 = require('./level_extra5');
+const lExtra6 = require('./level_extra6');
+const lExtra7 = require('./level_extra7');
+const lExtra8 = require('./level_extra8');
+const lExtra9 = require('./level_extra9');
+const lExtra10 = require('./level_extra10');
+const lExtra11 = require('./level_extra11');
+const lExtra12 = require('./level_extra12');
+const lExtra13 = require('./level_extra13');
+const lExtra14 = require('./level_extra14');
+const lExtra15 = require('./level_extra15');
+const lExtra16 = require('./level_extra16');
+const lExtra17 = require('./level_extra17');
+const lExtra18 = require('./level_extra18');
+const lExtra19 = require('./level_extra19');
+const lExtra20 = require('./level_extra20');
+const lExtra21 = require('./level_extra21');
+const lExtra22 = require('./level_extra22');
+const lExtra23 = require('./level_extra23');
+const lExtra24 = require('./level_extra24');
+const lExtra25 = require('./level_extra25');
+const lExtra26 = require('./level_extra26');
+const lExtra27 = require('./level_extra27');
+const lExtra28 = require('./level_extra28');
+const lExtra29 = require('./level_extra29');
+const lExtra30 = require('./level_extra30');
+const lExtra31 = require('./level_extra31');
+const lExtra32 = require('./level_extra32');
 
 // 기존 test_engine.js 단어도 가져와서 중복되지 않는 것 흡수
 let existingVocab = [];
@@ -41,6 +70,35 @@ const allCandidates = [
   ...lExtra,
   ...lExtra2,
   ...lExtra3,
+  ...lExtra4,
+  ...lExtra5,
+  ...lExtra6,
+  ...lExtra7,
+  ...lExtra8,
+  ...lExtra9,
+  ...lExtra10,
+  ...lExtra11,
+  ...lExtra12,
+  ...lExtra13,
+  ...lExtra14,
+  ...lExtra15,
+  ...lExtra16,
+  ...lExtra17,
+  ...lExtra18,
+  ...lExtra19,
+  ...lExtra20,
+  ...lExtra21,
+  ...lExtra22,
+  ...lExtra23,
+  ...lExtra24,
+  ...lExtra25,
+  ...lExtra26,
+  ...lExtra27,
+  ...lExtra28,
+  ...lExtra29,
+  ...lExtra30,
+  ...lExtra31,
+  ...lExtra32,
   ...existingVocab
 ];
 

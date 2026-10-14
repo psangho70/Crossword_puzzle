@@ -1787,7 +1787,7 @@ const htmlContent = `<!DOCTYPE html>
 
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
-        navigator.serviceWorker.register('./sw.js?v=6')
+        navigator.serviceWorker.register('./sw.js?v=8')
           .then(reg => {
             console.log('ServiceWorker registered:', reg.scope);
             reg.update();

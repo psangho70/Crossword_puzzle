@@ -41,6 +41,7 @@ const server = http.createServer((req, res) => {
       res.end(data.slice(start, end + 1));
       return;
     }
+    res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
     res.writeHead(200, { 'Content-Type': type, 'Accept-Ranges': 'bytes' });
     res.end(data);
   });
