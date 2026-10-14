@@ -7,7 +7,11 @@ const { prefixText, clueText, audioFileName } = require('./audio_util');
 // 각 단어에 사전 생성 음성 파일명(pa: 머리말, ca: 문제 본문)을 연결
 // (파일이 실제로 존재할 때만 연결 → 없으면 기기 음성엔진으로 자동 대체)
 const AUDIO_DIR = path.resolve(__dirname, '..', 'audio');
-const puzzlesJson = JSON.parse(fs.readFileSync('scripts/puzzles_100.json', 'utf8'));
+const puzzleSrc = fs.existsSync('scripts/puzzles_100_10x10.json')
+  ? 'scripts/puzzles_100_10x10.json'
+  : 'scripts/puzzles_100.json';
+console.log(`앱 빌드 퍼즐 데이터: ${puzzleSrc}`);
+const puzzlesJson = JSON.parse(fs.readFileSync(puzzleSrc, 'utf8'));
 let audioLinked = 0, audioMissing = 0;
 for (const p of puzzlesJson) {
   for (const w of p.words) {
@@ -25,8 +29,8 @@ const htmlContent = `<!DOCTYPE html>
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-  <title>청춘 7x7 가로세로 낱말 퍼즐 100</title>
-  <meta name="description" content="시니어 맞춤형 7x7 한국어 가로세로 낱말 퍼즐 100단계! 큰 글자, 큼직한 터치 자판, 또렷한 음성 안내(TTS)로 두뇌 건강을 지키세요.">
+  <title>청춘 10x10 가로세로 낱말 퍼즐 100</title>
+  <meta name="description" content="시니어 맞춤형 10x10 한국어 가로세로 낱말 퍼즐 100단계! 큰 글자, 큼직한 터치 자판, 또렷한 음성 안내(TTS)로 두뇌 건강을 지키세요.">
   <meta name="theme-color" content="#1D4ED8">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
@@ -305,12 +309,12 @@ const htmlContent = `<!DOCTYPE html>
     }
 
     /* =========================================================
-       3. 7x7 격자판 (Board)
+       3. 10x10 격자판 (Board)
        ========================================================= */
     .board-card {
       background: var(--card-bg);
       border-radius: 16px;
-      padding: 6px;
+      padding: 5px;
       box-shadow: 0 2px 8px rgba(0,0,0,0.05);
       border: 1px solid var(--border-color);
       display: flex;
@@ -321,14 +325,14 @@ const htmlContent = `<!DOCTYPE html>
 
     .board-grid {
       width: 100%;
-      max-width: 380px;
+      max-width: 440px;
       aspect-ratio: 1 / 1;
       display: grid;
-      grid-template-columns: repeat(7, 1fr);
-      grid-template-rows: repeat(7, 1fr);
-      gap: 4px;
-      background: #F1F5F9;
-      padding: 4px;
+      grid-template-columns: repeat(10, 1fr);
+      grid-template-rows: repeat(10, 1fr);
+      gap: 2.5px;
+      background: #E2E8F0;
+      padding: 3px;
       border-radius: 12px;
       box-shadow: inset 0 2px 5px rgba(0,0,0,0.04);
     }
@@ -338,11 +342,11 @@ const htmlContent = `<!DOCTYPE html>
       display: flex;
       align-items: center;
       justify-content: center;
-      background: #E2E8F0;
-      border-radius: 7px;
+      background: #CBD5E1;
+      border-radius: 5px;
       font-weight: 900;
-      font-size: clamp(16px, 4.2vw, 24px);
-      color: var(--text-color);
+      font-size: clamp(14px, 3.8vw, 20px);
+      color: #0F172A;
       cursor: default;
       transition: background-color 0.15s ease, border-color 0.15s ease;
       user-select: none;
@@ -350,7 +354,7 @@ const htmlContent = `<!DOCTYPE html>
 
     .cell.playable {
       background: #FFFFFF;
-      border: 1.5px solid #CBD5E1;
+      border: 1.5px solid #94A3B8;
       box-shadow: 0 1px 2px rgba(0,0,0,0.05);
       cursor: pointer;
     }
@@ -361,30 +365,30 @@ const htmlContent = `<!DOCTYPE html>
     .cell-num {
       position: absolute;
       top: 1px;
-      left: 2px;
-      font-size: clamp(9px, 2.1vw, 11px);
+      left: 1.5px;
+      font-size: clamp(7.5px, 1.8vw, 9.5px);
       font-weight: 900;
-      color: #64748B;
+      color: #475569;
       line-height: 1;
       pointer-events: none;
     }
 
     .cell.in-word {
       background-color: var(--highlight-color);
-      border-color: var(--highlight-border);
+      border: 2px solid var(--highlight-border);
     }
 
     .cell.current-cursor {
       background-color: #FEF9C3;
       border: 2.5px solid var(--cell-active-border);
-      box-shadow: 0 0 0 2px rgba(29, 78, 216, 0.25);
+      box-shadow: 0 0 0 2px rgba(29, 78, 216, 0.35);
       z-index: 2;
     }
 
     .cell.solved {
       background-color: var(--success-bg) !important;
       border-color: var(--success-border) !important;
-      color: var(--success-text);
+      color: var(--success-text) !important;
       font-weight: 900;
     }
 
@@ -770,7 +774,7 @@ const htmlContent = `<!DOCTYPE html>
       <div class="header-top">
         <div class="brand-title">
           <span>청춘 낱말 퍼즐</span>
-          <span class="badge">7×7 100단계</span>
+          <span class="badge">10×10 100단계</span>
         </div>
         <div class="header-actions">
           <!-- 소리 토글 -->
@@ -811,10 +815,10 @@ const htmlContent = `<!DOCTYPE html>
       </div>
     </header>
 
-    <!-- 7x7 격자판 보드 카드 -->
+    <!-- 10x10 격자판 보드 카드 -->
     <main class="board-card">
       <div class="board-grid" id="boardGrid">
-        <!-- 49개 셀이 동적으로 렌더링됩니다 -->
+        <!-- 100개 셀이 동적으로 렌더링됩니다 -->
       </div>
     </main>
 
@@ -1111,7 +1115,7 @@ const htmlContent = `<!DOCTYPE html>
     }
 
     // =========================================================
-    // 8. 7x7 격자판 렌더링
+    // 8. 10x10 격자판 렌더링
     // =========================================================
     function renderBoard() {
       boardGrid.innerHTML = '';
@@ -1131,8 +1135,9 @@ const htmlContent = `<!DOCTYPE html>
         }
       });
 
-      for (let r = 0; r < 7; r++) {
-        for (let c = 0; c < 7; c++) {
+      const gridSize = currentPuzzle.grid.length;
+      for (let r = 0; r < gridSize; r++) {
+        for (let c = 0; c < gridSize; c++) {
           const cellDiv = document.createElement('div');
           cellDiv.className = 'cell';
           cellDiv.dataset.r = r;
@@ -1782,12 +1787,19 @@ const htmlContent = `<!DOCTYPE html>
 
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
-        navigator.serviceWorker.register('./sw.js')
+        navigator.serviceWorker.register('./sw.js?v=6')
           .then(reg => {
             console.log('ServiceWorker registered:', reg.scope);
             reg.update();
           })
           .catch(err => console.warn('ServiceWorker registration failed:', err));
+      });
+      let refreshing = false;
+      navigator.serviceWorker.addEventListener('controllerchange', () => {
+        if (!refreshing) {
+          refreshing = true;
+          window.location.reload();
+        }
       });
     }
 

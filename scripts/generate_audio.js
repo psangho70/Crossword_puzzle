@@ -9,7 +9,11 @@ const { prefixText, clueText, audioFileName } = require('./audio_util');
 
 const ROOT = path.resolve(__dirname, '..');
 const AUDIO_DIR = path.join(ROOT, 'audio');
-const puzzles = JSON.parse(fs.readFileSync(path.join(__dirname, 'puzzles_100.json'), 'utf8'));
+const puzzleFile = fs.existsSync(path.join(__dirname, 'puzzles_100_10x10.json'))
+  ? 'puzzles_100_10x10.json'
+  : 'puzzles_100.json';
+console.log(`오디오 대상 퍼즐 파일: ${puzzleFile}`);
+const puzzles = JSON.parse(fs.readFileSync(path.join(__dirname, puzzleFile), 'utf8'));
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
@@ -36,33 +40,64 @@ async function main() {
   }
 
   const list = Array.from(texts);
-  let created = 0, skipped = 0, failed = [];
-  for (let i = 0; i < list.length; i++) {
-    const text = list[i];
-    const file = path.join(AUDIO_DIR, audioFileName(text));
-    if (fs.existsSync(file) && fs.statSync(file).size > 1000) { skipped++; continue; }
+  console.log(`전체 음성 대상 텍스트 수: ${list.length}개`);
+  let created = 0, skipped = 0;
+  const failed = [];
 
-    let ok = false;
-    for (let attempt = 1; attempt <= 4 && !ok; attempt++) {
-      try {
-        const buf = await synthesize(text);
-        fs.writeFileSync(file, buf);
-        ok = true;
-        created++;
-      } catch (e) {
-        console.warn(`[재시도 ${attempt}] ${text} -> ${e.message}`);
-        await sleep(1500 * attempt);
-      }
+  // 미생성 대상만 필터링
+  const pending = [];
+  for (const text of list) {
+    const file = path.join(AUDIO_DIR, audioFileName(text));
+    if (fs.existsSync(file) && fs.statSync(file).size > 1000) {
+      skipped++;
+    } else {
+      pending.push(text);
     }
-    if (!ok) failed.push(text);
-    if ((i + 1) % 20 === 0) console.log(`진행: ${i + 1}/${list.length}`);
-    await sleep(350);
   }
+  console.log(`기존 보유 파일: ${skipped}개 / 신규 생성 대기: ${pending.length}개`);
+
+  // 동시 3개 워커로 안정적으로 다운로드
+  const CONCURRENCY = 3;
+  let idx = 0;
+
+  async function worker(workerId) {
+    while (idx < pending.length) {
+      const currentIdx = idx++;
+      const text = pending[currentIdx];
+      const file = path.join(AUDIO_DIR, audioFileName(text));
+
+      let ok = false;
+      for (let attempt = 1; attempt <= 4 && !ok; attempt++) {
+        try {
+          const buf = await synthesize(text);
+          fs.writeFileSync(file, buf);
+          ok = true;
+          created++;
+        } catch (e) {
+          if (attempt === 4) {
+            console.warn(`[실패] ${text} -> ${e.message}`);
+          }
+          await sleep(1000 * attempt);
+        }
+      }
+      if (!ok) failed.push(text);
+
+      if ((created) % 25 === 0 && created > 0) {
+        console.log(`[진행] 생성 완료: ${created}/${pending.length} (${Math.round((created/pending.length)*100)}%)`);
+      }
+      await sleep(200);
+    }
+  }
+
+  const workers = [];
+  for (let w = 0; w < CONCURRENCY; w++) {
+    workers.push(worker(w));
+  }
+  await Promise.all(workers);
 
   console.log(`완료: 전체 ${list.length}개 / 신규 ${created}개 / 기존 ${skipped}개 / 실패 ${failed.length}개`);
   if (failed.length) {
-    console.log('실패 목록:', failed);
-    process.exitCode = 1;
+    console.log('실패 목록:', failed.slice(0, 10), failed.length > 10 ? `외 ${failed.length - 10}개` : '');
   }
 }
 

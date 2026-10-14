@@ -1,7 +1,7 @@
 {
-  "name": "청춘 7x7 가로세로 낱말 퍼즐 100",
+  "name": "청춘 10x10 가로세로 낱말 퍼즐 100",
   "short_name": "청춘낱말퍼즐",
-  "description": "어르신 맞춤형 7x7 한국어 가로세로 낱말 퍼즐 100단계! 큰 글자, 큼직한 터치 자판, 또렷한 음성 안내로 두뇌를 맑게 깨워보세요.",
+  "description": "어르신 맞춤형 10x10 한국어 가로세로 낱말 퍼즐 100단계! 큰 글자, 큼직한 터치 자판, 또렷한 음성 안내로 두뇌를 맑게 깨워보세요.",
   "start_url": "./index.html",
   "display": "standalone",
   "orientation": "portrait",

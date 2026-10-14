@@ -1,5 +1,5 @@
-// 청춘 7x7 가로세로 낱말 퍼즐 100 - Cache-First Service Worker (v5)
-const CACHE_NAME = 'senior-crossword-100-v5';
+// 청춘 10x10 가로세로 낱말 퍼즐 100 - Cache-First Service Worker (v6)
+const CACHE_NAME = 'senior-crossword-100-v6';
 const AUDIO_CACHE = 'senior-crossword-audio-v1'; // 문제 음성 MP3 전용 (버전 업데이트와 무관하게 유지)
 const ASSETS_TO_CACHE = [
   './',
