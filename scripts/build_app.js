@@ -1,8 +1,24 @@
 // build_app.js
-// 100단계 퍼즐 데이터와 W3C 표준 Web Speech API 완전 최적화 index.html 생성기
+// 100단계 퍼즐 데이터 + 사전 생성 음성(MP3) 매핑을 내장한 index.html 생성기
 const fs = require('fs');
+const path = require('path');
+const { prefixText, clueText, audioFileName } = require('./audio_util');
 
-const puzzlesData = fs.readFileSync('scripts/puzzles_100.json', 'utf8');
+// 각 단어에 사전 생성 음성 파일명(pa: 머리말, ca: 문제 본문)을 연결
+// (파일이 실제로 존재할 때만 연결 → 없으면 기기 음성엔진으로 자동 대체)
+const AUDIO_DIR = path.resolve(__dirname, '..', 'audio');
+const puzzlesJson = JSON.parse(fs.readFileSync('scripts/puzzles_100.json', 'utf8'));
+let audioLinked = 0, audioMissing = 0;
+for (const p of puzzlesJson) {
+  for (const w of p.words) {
+    const pa = audioFileName(prefixText(w));
+    const ca = audioFileName(clueText(w));
+    if (fs.existsSync(path.join(AUDIO_DIR, pa))) w.pa = pa; else audioMissing++;
+    if (fs.existsSync(path.join(AUDIO_DIR, ca))) { w.ca = ca; audioLinked++; } else audioMissing++;
+  }
+}
+console.log(`음성 파일 연결: 문제 본문 ${audioLinked}개 연결 / 누락 ${audioMissing}개`);
+const puzzlesData = JSON.stringify(puzzlesJson);
 
 const htmlContent = `<!DOCTYPE html>
 <html lang="ko">
@@ -1491,11 +1507,15 @@ const htmlContent = `<!DOCTYPE html>
     });
 
     // =========================================================
-    // 11. W3C 표준 Web Speech API 완전 최적화
-    // 외부 API 차단(CORS) 없음, PC & 모바일 직접 낭독
+    // 11. 문제 듣기 엔진 (2단 구조)
+    //  1순위: 같은 도메인에 미리 만들어 둔 한국어 음성 MP3 재생 (HTML5 Audio)
+    //         → 스마트폰 기기 TTS 엔진/음성데이터 설치 여부와 완전히 무관, 미디어 볼륨으로 출력
+    //  2순위: MP3 재생 실패 시(오프라인+미캐시 등) 기기 내장 speechSynthesis 대체 낭독
     // =========================================================
-    window.__currentUtterance = null; // 안드로이드 GC 수거 방지용 전역 객체
-    let ttsResumeTimer = null;
+    const ttsAudio = new Audio();
+    ttsAudio.preload = 'auto';
+    let ttsSession = 0; // 이전 재생의 늦은 이벤트를 무시하기 위한 세션 번호
+    window.__currentUtterance = null; // 안드로이드 GC 수거 방지용 전역 참조
 
     function getKoreanVoice() {
       refreshVoices();
@@ -1508,92 +1528,115 @@ const htmlContent = `<!DOCTYPE html>
       return ko || null;
     }
 
+    function setTtsUi(on, msg) {
+      ttsSpeaking = on;
+      btnTts.classList.toggle('speaking', on);
+      btnTts.querySelector('span:last-child').textContent = on ? '듣기 중지' : '문제 듣기';
+      if (msg) ttsToast.textContent = msg;
+      ttsToast.classList.toggle('active', on);
+    }
+
+    function showTtsError(msg) {
+      ttsToast.textContent = msg;
+      ttsToast.classList.add('active');
+      setTimeout(() => {
+        if (!ttsSpeaking) ttsToast.classList.remove('active');
+      }, 4000);
+    }
+
     function speakClue() {
-      if (!('speechSynthesis' in window)) {
-        alert('사용하시는 기기나 브라우저에서 음성 안내(TTS) 기능을 지원하지 않습니다.');
+      // 재생 중이면 중지 (토글)
+      if (ttsSpeaking) {
+        stopTts();
         return;
       }
+      const w = currentPuzzle && currentPuzzle.words[selectedWordIndex];
+      if (!w) return;
 
-      // 1) 이미 재생 중이면 즉시 중지 (토글 동작)
-      if (ttsSpeaking || window.speechSynthesis.speaking) {
+      const fullText = \`\${w.dirKo} \${w.num}번, \${w.len}글자 문제입니다. \${w.clue}\`;
+      const queue = [w.pa, w.ca].filter(Boolean).map(f => './audio/' + f);
+
+      const session = ++ttsSession;
+      setTtsUi(true, '🔊 문제를 읽어드립니다... (다시 누르면 중지)');
+
+      if (queue.length === 2) {
+        playAudioQueue(queue, 0, session, fullText);
+      } else {
+        speakNative(fullText, session);
+      }
+    }
+
+    // 1순위: MP3 순차 재생 (머리말 → 문제 본문)
+    function playAudioQueue(queue, idx, session, fullText) {
+      if (session !== ttsSession) return;
+      if (idx >= queue.length) {
         stopTts();
         return;
       }
 
+      ttsAudio.onended = () => {
+        if (session !== ttsSession) return;
+        playAudioQueue(queue, idx + 1, session, fullText);
+      };
+      ttsAudio.onerror = () => {
+        if (session !== ttsSession) return;
+        console.warn('MP3 load error -> fallback to speechSynthesis', ttsAudio.error);
+        speakNative(fullText, session);
+      };
+
       try {
-        // 소리 피드백 (AudioContext 언락 및 기기 미디어 볼륨 확인용)
-        if (soundEnabled) {
-          sound.playTap();
+        ttsAudio.src = queue[idx];
+        ttsAudio.volume = 1.0;
+        const p = ttsAudio.play(); // 사용자 터치 이벤트 안에서 즉시 호출
+        if (p && typeof p.catch === 'function') {
+          p.catch(err => {
+            if (session !== ttsSession) return;
+            console.warn('MP3 play() rejected:', err);
+            if (err && err.name === 'NotAllowedError') {
+              setTtsUi(false);
+              showTtsError('⚠️ 브라우저가 소리 재생을 막았습니다. 화면을 한 번 터치한 뒤 다시 눌러주세요.');
+            } else {
+              speakNative(fullText, session);
+            }
+          });
         }
+      } catch (err) {
+        console.warn('Audio error:', err);
+        speakNative(fullText, session);
+      }
+    }
 
-        // 모바일 크롬 일시정지 해제
-        if (window.speechSynthesis.paused) {
-          window.speechSynthesis.resume();
-        }
-
-        const activeWord = currentPuzzle.words[selectedWordIndex];
-        if (!activeWord) return;
-        const textToRead = \`\${activeWord.dirKo} \${activeWord.num}번, \${activeWord.len}글자 문제입니다. \${activeWord.clue}\`;
-
-        const utter = new SpeechSynthesisUtterance(textToRead);
+    // 2순위: 기기 내장 음성엔진 (오프라인 등 MP3 사용 불가 시)
+    function speakNative(text, session) {
+      if (session !== ttsSession) return;
+      if (!('speechSynthesis' in window)) {
+        setTtsUi(false);
+        showTtsError('⚠️ 음성 파일을 불러오지 못했습니다. 인터넷 연결을 확인해 주세요.');
+        return;
+      }
+      try {
+        const utter = new SpeechSynthesisUtterance(text);
         utter.lang = 'ko-KR';
-        utter.rate = 0.95; // 시니어 맞춤 또렷한 속도
+        utter.rate = 0.95;
         utter.pitch = 1.0;
         utter.volume = 1.0;
-
-        // 최적 한국어 음성 바인딩 (없으면 시스템 기본 로캘 ko-KR 사용)
         const koVoice = getKoreanVoice();
-        if (koVoice) {
-          utter.voice = koVoice;
-        }
-
-        // 안드로이드 GC 수거 방지 전역 참조
+        if (koVoice) utter.voice = koVoice;
         window.__currentUtterance = utter;
 
-        // UI 즉각 갱신
-        ttsSpeaking = true;
-        btnTts.classList.add('speaking');
-        btnTts.querySelector('span:last-child').textContent = '듣기 중지';
-        ttsToast.textContent = '🔊 문제를 읽어드립니다... (터치 시 중지)';
-        ttsToast.classList.add('active');
-
-        utter.onstart = () => {
-          ttsSpeaking = true;
-          btnTts.classList.add('speaking');
-          btnTts.querySelector('span:last-child').textContent = '듣기 중지';
-          ttsToast.classList.add('active');
-        };
-
         utter.onend = () => {
-          stopTts();
+          if (session === ttsSession) stopTts();
         };
-
         utter.onerror = (e) => {
-          console.warn('SpeechSynthesis event error:', e);
+          if (session !== ttsSession) return;
+          console.warn('SpeechSynthesis error:', e && e.error);
+          if (e && (e.error === 'canceled' || e.error === 'interrupted')) return;
           stopTts();
+          showTtsError('⚠️ 기기 음성엔진 오류(' + ((e && e.error) || 'unknown') + '). 인터넷 연결 후 다시 눌러주세요.');
         };
 
-        // 크롬 계열 모바일 킵얼라이브 (일시 멈춤 방지)
-        if (ttsResumeTimer) clearInterval(ttsResumeTimer);
-        ttsResumeTimer = setInterval(() => {
-          if (ttsSpeaking && window.speechSynthesis.speaking) {
-            window.speechSynthesis.resume();
-          } else {
-            clearInterval(ttsResumeTimer);
-            ttsResumeTimer = null;
-          }
-        }, 3000);
-
-        // 사용자 제스처 동기 실행
+        if (window.speechSynthesis.paused) window.speechSynthesis.resume();
         window.speechSynthesis.speak(utter);
-
-        // 12초 안전 타이머 (타임아웃 시 UI 복구)
-        setTimeout(() => {
-          if (ttsSpeaking && !window.speechSynthesis.speaking) {
-            stopTts();
-          }
-        }, 12000);
-
       } catch (err) {
         console.error('SpeechSynthesis execute error:', err);
         stopTts();
@@ -1601,25 +1644,29 @@ const htmlContent = `<!DOCTYPE html>
     }
 
     function stopTts() {
-      if (ttsResumeTimer) {
-        clearInterval(ttsResumeTimer);
-        ttsResumeTimer = null;
-      }
+      ttsSession++;
+      try {
+        ttsAudio.onended = null;
+        ttsAudio.onerror = null;
+        ttsAudio.pause();
+        ttsAudio.removeAttribute('src');
+        ttsAudio.load();
+      } catch (e) {}
       if ('speechSynthesis' in window) {
         try {
-          window.speechSynthesis.cancel();
+          if (window.speechSynthesis.speaking || window.speechSynthesis.pending) {
+            window.speechSynthesis.cancel();
+          }
         } catch (e) {}
       }
-      ttsSpeaking = false;
       window.__currentUtterance = null;
-      btnTts.classList.remove('speaking');
-      btnTts.querySelector('span:last-child').textContent = '문제 듣기';
-      ttsToast.classList.remove('active');
+      setTtsUi(false);
     }
 
     btnTts.addEventListener('click', () => {
       speakClue();
     });
+
 
     // =========================================================
     // 12. 컨트롤 이벤트 리스너

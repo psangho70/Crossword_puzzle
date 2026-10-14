@@ -1,5 +1,6 @@
-// 청춘 7x7 가로세로 낱말 퍼즐 100 - Cache-First Service Worker (v4)
-const CACHE_NAME = 'senior-crossword-100-v4';
+// 청춘 7x7 가로세로 낱말 퍼즐 100 - Cache-First Service Worker (v5)
+const CACHE_NAME = 'senior-crossword-100-v5';
+const AUDIO_CACHE = 'senior-crossword-audio-v1'; // 문제 음성 MP3 전용 (버전 업데이트와 무관하게 유지)
 const ASSETS_TO_CACHE = [
   './',
   './index.html',
@@ -22,7 +23,7 @@ self.addEventListener('activate', (event) => {
     caches.keys().then((keyList) => {
       return Promise.all(
         keyList.map((key) => {
-          if (key !== CACHE_NAME) {
+          if (key !== CACHE_NAME && key !== AUDIO_CACHE) {
             return caches.delete(key);
           }
         })
@@ -31,12 +32,67 @@ self.addEventListener('activate', (event) => {
   );
 });
 
-// 네트워크 요청 가로채기: 동일 Origin 내부 자원만 Cache-First 적용
+// 오디오 Range 요청(모바일 미디어 재생기 필수)에 206 부분 응답 생성
+async function toRangeResponse(request, response) {
+  const range = request.headers.get('range');
+  if (!range) return response;
+  const buf = await response.arrayBuffer();
+  const total = buf.byteLength;
+  const m = /bytes=(\d*)-(\d*)/.exec(range);
+  let start = m && m[1] ? parseInt(m[1], 10) : 0;
+  let end = m && m[2] ? parseInt(m[2], 10) : total - 1;
+  if (m && !m[1] && m[2]) { // bytes=-N (마지막 N바이트)
+    start = Math.max(0, total - parseInt(m[2], 10));
+    end = total - 1;
+  }
+  end = Math.min(end, total - 1);
+  if (start >= total || start > end) {
+    return new Response(null, { status: 416, headers: { 'Content-Range': `bytes */${total}` } });
+  }
+  return new Response(buf.slice(start, end + 1), {
+    status: 206,
+    statusText: 'Partial Content',
+    headers: {
+      'Content-Type': response.headers.get('Content-Type') || 'audio/mpeg',
+      'Content-Range': `bytes ${start}-${end}/${total}`,
+      'Content-Length': String(end - start + 1),
+      'Accept-Ranges': 'bytes'
+    }
+  });
+}
+
+// 문제 음성 MP3: 캐시 우선 → 없으면 전체 파일을 받아 캐시 후 응답 (오프라인 재생 지원)
+async function handleAudio(request) {
+  const cache = await caches.open(AUDIO_CACHE);
+  const url = request.url;
+  let response = await cache.match(url);
+  if (!response) {
+    try {
+      const full = await fetch(url); // Range 없이 전체 파일 요청
+      if (full && full.status === 200) {
+        await cache.put(url, full.clone());
+      }
+      response = full;
+    } catch (e) {
+      return Response.error();
+    }
+  }
+  if (response.status !== 200) return response;
+  return toRangeResponse(request, response);
+}
+
+// 네트워크 요청 가로채기
 self.addEventListener('fetch', (event) => {
   if (event.request.method !== 'GET') return;
 
-  // 외부 도메인(TTS 오디오 스트림 등) 요청은 서비스 워커 간섭 없이 브라우저 기본 네트워크로 직통 연결
+  // 외부 도메인 요청은 서비스 워커가 관여하지 않음
   if (!event.request.url.startsWith(self.location.origin)) {
+    return;
+  }
+
+  const url = new URL(event.request.url);
+  if (url.pathname.includes('/audio/') && url.pathname.endsWith('.mp3')) {
+    event.respondWith(handleAudio(event.request));
     return;
   }
 
