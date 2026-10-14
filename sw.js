@@ -1,5 +1,5 @@
 // 청춘 7x7 가로세로 낱말 퍼즐 100 - Cache-First Service Worker
-const CACHE_NAME = 'senior-crossword-100-v1';
+const CACHE_NAME = 'senior-crossword-100-v2';
 const ASSETS_TO_CACHE = [
   './',
   './index.html',
