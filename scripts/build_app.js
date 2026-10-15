@@ -146,13 +146,70 @@ const htmlContent = `<!DOCTYPE html>
     }
 
     /* =========================================================
-       3. 초슬림 헤더 탑바 (44px)
+       3-1. 최상단 앱 명칭 & 브랜딩 바
+       ========================================================= */
+    .brand-bar {
+      height: 28px;
+      min-height: 28px;
+      background: linear-gradient(135deg, #1E3A8A 0%, #1D4ED8 50%, #2563EB 100%);
+      border-radius: 9px;
+      padding: 0 10px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      color: #FFFFFF;
+      box-shadow: 0 2px 4px rgba(29, 78, 216, 0.18);
+      flex-shrink: 0;
+    }
+
+    .brand-logo-area {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .brand-icon {
+      font-size: 15px;
+      line-height: 1;
+      filter: drop-shadow(0 1px 2px rgba(0,0,0,0.25));
+    }
+
+    .brand-title {
+      font-size: 13.5px;
+      font-weight: 900;
+      letter-spacing: -0.3px;
+      color: #FFFFFF;
+      line-height: 1;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .brand-highlight {
+      color: #FDE047; /* 따뜻하고 밝은 골드 옐로우 */
+      font-weight: 900;
+    }
+
+    .brand-sub-badge {
+      font-size: 10px;
+      font-weight: 800;
+      background: rgba(255, 255, 255, 0.22);
+      border: 1px solid rgba(255, 255, 255, 0.4);
+      color: #FEF08A;
+      padding: 1px 7px;
+      border-radius: 9999px;
+      letter-spacing: -0.2px;
+      line-height: 1.3;
+    }
+
+    /* =========================================================
+       3-2. 초슬림 단계 조작 탑바 (38px)
        ========================================================= */
     .app-topbar {
-      height: 42px;
-      min-height: 42px;
+      height: 38px;
+      min-height: 38px;
       background: var(--card-bg);
-      border-radius: 12px;
+      border-radius: 11px;
       padding: 0 8px;
       box-shadow: 0 1px 4px rgba(0,0,0,0.05);
       border: 1px solid var(--border-color);
@@ -166,9 +223,9 @@ const htmlContent = `<!DOCTYPE html>
     .topbar-btn {
       background: #F1F5F9;
       border: 1px solid #CBD5E1;
-      border-radius: 8px;
-      padding: 5px 9px;
-      font-size: 13px;
+      border-radius: 7px;
+      padding: 3px 8px;
+      font-size: 12.5px;
       font-weight: 800;
       color: var(--text-color);
       cursor: pointer;
@@ -176,7 +233,7 @@ const htmlContent = `<!DOCTYPE html>
       align-items: center;
       gap: 4px;
       white-space: nowrap;
-      height: 32px;
+      height: 28px;
       transition: all 0.15s ease;
     }
     .topbar-btn:active {
@@ -316,25 +373,25 @@ const htmlContent = `<!DOCTYPE html>
     }
 
     /* =========================================================
-       5. 슬림형 문제 카드 (Clue Card) & 인라인 슬롯
+       5. 슬림형 문제 설명 카드 & 정답 슬롯 분리 (오버플로 원천 방지)
        ========================================================= */
     .clue-card {
       background: var(--card-bg);
       border-radius: 12px;
-      padding: 6px 10px;
+      padding: 5px 9px;
       box-shadow: 0 1px 4px rgba(0,0,0,0.04);
       border: 1.5px solid #BFDBFE;
       display: flex;
       flex-direction: column;
-      gap: 4px;
+      gap: 3px;
       flex-shrink: 0;
-      min-height: 62px;
     }
 
-    .clue-header {
+    .clue-top-row {
       display: flex;
       align-items: center;
       justify-content: space-between;
+      width: 100%;
       gap: 6px;
     }
 
@@ -343,40 +400,77 @@ const htmlContent = `<!DOCTYPE html>
       color: #FFFFFF;
       font-size: calc(12px * var(--font-scale));
       font-weight: 900;
-      padding: 2px 7px;
+      padding: 2px 8px;
       border-radius: 9999px;
-      display: flex;
+      display: inline-flex;
       align-items: center;
       gap: 3px;
       white-space: nowrap;
       flex-shrink: 0;
     }
 
-    /* 정답 조합 슬롯 (인라인 콤팩트 배치) */
+    .tts-btn {
+      background: #EFF6FF;
+      color: var(--primary-color);
+      border: 1.5px solid #93C5FD;
+      border-radius: 9999px;
+      padding: 2px 10px;
+      font-size: calc(12px * var(--font-scale));
+      font-weight: 800;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      white-space: nowrap;
+      flex-shrink: 0;
+      height: 26px;
+      box-sizing: border-box;
+      transition: all 0.15s ease;
+    }
+    .tts-btn:active {
+      transform: scale(0.96);
+    }
+    .tts-btn.speaking {
+      background: #DCFCE7;
+      border-color: #22C55E;
+      color: #15803D;
+    }
+
+    .clue-text {
+      font-size: calc(14px * var(--font-scale));
+      font-weight: 800;
+      color: var(--text-color);
+      line-height: 1.32;
+      word-break: keep-all;
+    }
+
+    /* 정답 조합 슬롯 (단독 행으로 가로 폭 100% 여유 배치) */
     .slots-container {
       display: flex;
       align-items: center;
-      gap: 4px;
-      flex-grow: 1;
+      gap: 5px;
+      width: 100%;
       justify-content: center;
+      padding-top: 1px;
     }
 
     .slot {
-      width: clamp(28px, 6.5vw, 36px);
-      height: clamp(30px, 7vw, 38px);
+      width: clamp(28px, 6.8vw, 35px);
+      height: clamp(28px, 6.8vw, 35px);
       background: #FFFFFF;
       border: 1.5px solid #94A3B8;
       border-radius: 6px;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: calc(17px * var(--font-scale));
+      font-size: calc(16px * var(--font-scale));
       font-weight: 900;
       color: var(--text-color);
       cursor: pointer;
       position: relative;
       box-shadow: 0 1px 2px rgba(0,0,0,0.05);
       transition: all 0.12s ease;
+      box-sizing: border-box;
     }
     .slot:active {
       transform: scale(0.96);
@@ -391,39 +485,6 @@ const htmlContent = `<!DOCTYPE html>
       border-color: var(--primary-color);
       box-shadow: 0 0 0 2px rgba(29, 78, 216, 0.3);
       background: #EFF6FF;
-    }
-
-    .tts-btn {
-      background: #EFF6FF;
-      color: var(--primary-color);
-      border: 1.5px solid #93C5FD;
-      border-radius: 9999px;
-      padding: 2px 8px;
-      font-size: calc(12px * var(--font-scale));
-      font-weight: 800;
-      cursor: pointer;
-      display: inline-flex;
-      align-items: center;
-      gap: 3px;
-      white-space: nowrap;
-      flex-shrink: 0;
-      height: 28px;
-    }
-    .tts-btn:active {
-      transform: scale(0.96);
-    }
-    .tts-btn.speaking {
-      background: #DCFCE7;
-      border-color: #22C55E;
-      color: #15803D;
-    }
-
-    .clue-text {
-      font-size: calc(15px * var(--font-scale));
-      font-weight: 800;
-      color: var(--text-color);
-      line-height: 1.35;
-      word-break: keep-all;
     }
 
     .tts-toast {
@@ -947,7 +1008,16 @@ const htmlContent = `<!DOCTYPE html>
   <!-- [화면 1] 메인 퍼즐 화면 -->
   <div class="app-container" id="mainGameScreen">
 
-    <!-- 상단 42px 초슬림 탑바 -->
+    <!-- 최상단 앱 명칭 & 브랜딩 바 -->
+    <div class="brand-bar">
+      <div class="brand-logo-area">
+        <span class="brand-icon">🧩</span>
+        <h1 class="brand-title">청춘 <span class="brand-highlight">10×10</span> 낱말퍼즐</h1>
+      </div>
+      <div class="brand-sub-badge">어르신 두뇌 건강</div>
+    </div>
+
+    <!-- 상단 38px 초슬림 단계 조작 탑바 -->
     <header class="app-topbar">
       <button class="topbar-btn" id="btnOpenStageMap" title="스테이지/단계 선택 목록 열기">
         <span>☰</span> <span>단계목록</span>
@@ -974,23 +1044,23 @@ const htmlContent = `<!DOCTYPE html>
       </div>
     </main>
 
-    <!-- 슬림형 문제 설명 카드 & 인라인 슬롯 -->
+    <!-- 슬림형 문제 설명 카드 & 정답 슬롯 분리 (오버플로 원천 방지) -->
     <section class="clue-card">
-      <div class="clue-header">
+      <div class="clue-top-row">
         <div class="clue-tag" id="clueTag">
           <span id="clueDirIcon">➡</span>
           <span id="clueTitle">가로 1번</span>
         </div>
-        <!-- 정답 글자 조합 슬롯 -->
-        <div class="slots-container" id="slotsContainer">
-          <!-- 글자 수 슬롯 동적 생성 -->
-        </div>
         <button class="tts-btn" id="btnTts">
-          <span>🔊</span> <span>듣기</span>
+          <span>🔊</span> <span>문제 듣기</span>
         </button>
       </div>
       <div class="clue-text" id="clueText">
         문제를 불러오는 중입니다...
+      </div>
+      <!-- 정답 글자 조합 슬롯 (단독 행: 5글자 이상도 가로폭 100% 여유) -->
+      <div class="slots-container" id="slotsContainer">
+        <!-- 글자 수 슬롯 동적 생성 -->
       </div>
       <div class="tts-toast" id="ttsToast">
         🔊 문제 낭독 중입니다...
@@ -1071,7 +1141,7 @@ const htmlContent = `<!DOCTYPE html>
         <label class="setting-label">음성 안내 설정</label>
         <div class="setting-toggle-row">
           <span class="setting-toggle-text">문제 선택 시 자동으로 읽어주기</span>
-          <button class="topbar-btn" id="btnToggleAutoSpeak" style="height: 32px;">켜짐</button>
+          <button class="topbar-btn" id="btnToggleAutoSpeak" style="height: 32px; color: #64748B;">꺼짐</button>
         </div>
       </div>
 
@@ -1198,7 +1268,7 @@ const htmlContent = `<!DOCTYPE html>
     let clearedSet = new Set(JSON.parse(localStorage.getItem(STORAGE_KEY_CLEARED) || '[]'));
     let fontScale = parseFloat(localStorage.getItem(STORAGE_KEY_FONT) || '1.0');
     let soundEnabled = localStorage.getItem(STORAGE_KEY_SOUND) !== 'false';
-    let autoSpeak = localStorage.getItem(STORAGE_KEY_AUTO_SPEAK) !== 'false';
+    let autoSpeak = localStorage.getItem(STORAGE_KEY_AUTO_SPEAK) === 'true';
 
     sound.enabled = soundEnabled;
     document.documentElement.style.setProperty('--font-scale', fontScale.toString());
@@ -1888,6 +1958,24 @@ const htmlContent = `<!DOCTYPE html>
       btnCloseInstall.addEventListener('click', () => {
         document.getElementById('installBanner').classList.remove('active');
         sessionStorage.setItem('pwa_banner_closed', '1');
+      });
+    }
+
+    // 12. PWA 서비스 워커 등록 (자동 캐시 업데이트)
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./sw.js?v=11')
+          .then(reg => {
+            reg.update();
+          })
+          .catch(err => console.warn('SW reg failed:', err));
+      });
+      let refreshing = false;
+      navigator.serviceWorker.addEventListener('controllerchange', () => {
+        if (!refreshing) {
+          refreshing = true;
+          window.location.reload();
+        }
       });
     }
 
