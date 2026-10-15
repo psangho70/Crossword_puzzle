@@ -1,5 +1,5 @@
 // scripts/generator_10x10.js
-// 10x10 가로세로 낱말퍼즐 100단계 고밀도(Dense) & 전역 비중복(Global Unique) 생성 엔진
+// 10x10 가로세로 낱말퍼즐 100단계 초고밀도(Ultra-Dense) & 전역 비중복(Global Unique) 생성 엔진
 const fs = require('fs');
 const path = require('path');
 
@@ -10,7 +10,7 @@ function mulberry32(a) {
     t = Math.imul(t ^ t >>> 15, t | 1);
     t ^= t + Math.imul(t ^ t >>> 7, t | 61);
     return ((t ^ t >>> 14) >>> 0) / 4294967296;
-  }
+  };
 }
 
 // 어휘 사전 로드
@@ -34,166 +34,182 @@ function buildCharIndex(vocabList) {
   return charIndex;
 }
 
-// 10x10 고밀도 퍼즐 단일 생성기
-// targetWordCount: 목표 문항 수 (12 ~ 14개)
-// minFilledCells: 최소 활성화 칸 수 (최소 32칸 이상 채워져야 통과)
-function generateDense10x10Puzzle(seed, targetWordCount, minFilledCells, allowedVocab, usedGlobalWords) {
-  const rng = mulberry32(seed);
+// 단어 배치가 가능한지 검사하는 헬퍼 함수
+function canPlaceWord(grid, word, dir, r, c) {
+  const wordLen = word.length;
+  if (r < 0 || c < 0) return false;
+  if (dir === 'down' && r + wordLen > GRID_SIZE) return false;
+  if (dir === 'across' && c + wordLen > GRID_SIZE) return false;
 
-  function shuffle(arr) {
-    const a = arr.slice();
-    for (let i = a.length - 1; i > 0; i--) {
-      const j = Math.floor(rng() * (i + 1));
-      [a[i], a[j]] = [a[j], a[i]];
-    }
-    return a;
+  // 단어 앞뒤 칸 공백 검사
+  if (dir === 'down') {
+    if (r > 0 && grid[r - 1][c] !== null) return false;
+    if (r + wordLen < GRID_SIZE && grid[r + wordLen][c] !== null) return false;
+  } else {
+    if (c > 0 && grid[r][c - 1] !== null) return false;
+    if (c + wordLen < GRID_SIZE && grid[r][c + wordLen] !== null) return false;
   }
 
-  // 아직 글로벌에서 사용되지 않은 후보 단어들
-  const pool = allowedVocab.filter(v => !usedGlobalWords.has(v.word));
-  if (pool.length < targetWordCount) return null;
+  let intersections = 0;
+  for (let k = 0; k < wordLen; k++) {
+    const curR = dir === 'down' ? r + k : r;
+    const curC = dir === 'across' ? c + k : c;
+    const curChar = word[k];
 
-  const charIndex = buildCharIndex(pool);
-
-  // 단어 배치가 가능한지 검사하는 헬퍼 함수
-  function canPlaceWord(grid, word, dir, r, c) {
-    const wordLen = word.length;
-    if (r < 0 || c < 0) return false;
-    if (dir === 'down' && r + wordLen > GRID_SIZE) return false;
-    if (dir === 'across' && c + wordLen > GRID_SIZE) return false;
-
-    // 단어 앞뒤 칸 공백 검사
-    if (dir === 'down') {
-      if (r > 0 && grid[r - 1][c] !== null) return false;
-      if (r + wordLen < GRID_SIZE && grid[r + wordLen][c] !== null) return false;
+    if (grid[curR][curC] !== null) {
+      if (grid[curR][curC] !== curChar) return false;
+      intersections++;
     } else {
-      if (c > 0 && grid[r][c - 1] !== null) return false;
-      if (c + wordLen < GRID_SIZE && grid[r][c + wordLen] !== null) return false;
-    }
-
-    let intersections = 0;
-    for (let k = 0; k < wordLen; k++) {
-      const curR = dir === 'down' ? r + k : r;
-      const curC = dir === 'across' ? c + k : c;
-      const curChar = word[k];
-
-      if (grid[curR][curC] !== null) {
-        if (grid[curR][curC] !== curChar) return false;
-        intersections++;
+      if (dir === 'down') {
+        if (curC > 0 && grid[curR][curC - 1] !== null) return false;
+        if (curC < GRID_SIZE - 1 && grid[curR][curC + 1] !== null) return false;
       } else {
-        // 평행 인접 검사 (교차점이 아닌 신규 칸의 경우 좌우/상하 인접 검사)
-        if (dir === 'down') {
-          if (curC > 0 && grid[curR][curC - 1] !== null) return false;
-          if (curC < GRID_SIZE - 1 && grid[curR][curC + 1] !== null) return false;
-        } else {
-          if (curR > 0 && grid[curR - 1][curC] !== null) return false;
-          if (curR < GRID_SIZE - 1 && grid[curR + 1][curC] !== null) return false;
-        }
+        if (curR > 0 && grid[curR - 1][curC] !== null) return false;
+        if (curR < GRID_SIZE - 1 && grid[curR + 1][curC] !== null) return false;
       }
     }
-
-    return true;
   }
 
-  function applyWord(grid, word, dir, r, c) {
-    for (let k = 0; k < word.length; k++) {
-      const curR = dir === 'down' ? r + k : r;
-      const curC = dir === 'across' ? c + k : c;
-      grid[curR][curC] = word[k];
-    }
+  return true;
+}
+
+function applyWord(grid, word, dir, r, c) {
+  for (let k = 0; k < word.length; k++) {
+    const curR = dir === 'down' ? r + k : r;
+    const curC = dir === 'across' ? c + k : c;
+    grid[curR][curC] = word[k];
+  }
+}
+
+// 10x10 초고밀도 퍼즐 단일 생성기
+function generateDense10x10Puzzle(seed, targetWords, minFilled, pool, usedGlobal) {
+  let rngVal = seed;
+  function rand() {
+    rngVal = (rngVal * 9301 + 49297) % 233280;
+    return rngVal / 233280;
   }
 
-  for (let attempt = 0; attempt < 120; attempt++) {
+  // 2~4글자 위주로 우선 필터링하되 5글자도 일부 허용
+  const available = pool.filter(v => !usedGlobal.has(v.word) && v.word.length >= 2 && v.word.length <= 5);
+  if (available.length < targetWords) return null;
+
+  const charIndex = buildCharIndex(available);
+
+  for (let attempt = 0; attempt < 40; attempt++) {
     const grid = Array.from({ length: GRID_SIZE }, () => Array(GRID_SIZE).fill(null));
     const placed = [];
     const usedInStage = new Set();
 
-    // 1단계: 첫 번째 시드 단어 (상단/중앙 영역 배치, 길이 2~4)
-    const firstPool = pool.filter(v => v.word.length >= 2 && v.word.length <= 4);
-    if (firstPool.length === 0) continue;
-    const firstWord = firstPool[attempt % firstPool.length];
-    const dirFirst = (attempt % 2 === 0) ? 'across' : 'down';
-    const maxR = Math.max(1, GRID_SIZE - (dirFirst === 'down' ? firstWord.word.length : 1) - 2);
-    const maxC = Math.max(1, GRID_SIZE - (dirFirst === 'across' ? firstWord.word.length : 1) - 2);
-    const rFirst = Math.min(5, 2 + Math.floor(rng() * maxR));
-    const cFirst = Math.min(5, 2 + Math.floor(rng() * maxC));
+    // 초기 시드 단어 (중앙 2~4행, 2~4열 부근)
+    const seedPool = available.filter(v => v.word.length >= 3 && v.word.length <= 4);
+    if (seedPool.length === 0) continue;
+    const seedWord = seedPool[Math.floor(rand() * seedPool.length)];
+    const dir0 = rand() > 0.5 ? 'across' : 'down';
+    const r0 = dir0 === 'across' ? (2 + Math.floor(rand() * 4)) : (1 + Math.floor(rand() * 4));
+    const c0 = dir0 === 'across' ? (1 + Math.floor(rand() * 4)) : (2 + Math.floor(rand() * 4));
 
-    if (!canPlaceWord(grid, firstWord.word, dirFirst, rFirst, cFirst)) continue;
-    applyWord(grid, firstWord.word, dirFirst, rFirst, cFirst);
-    placed.push({ word: firstWord.word, clue: firstWord.clue, dir: dirFirst, r: rFirst, c: cFirst, len: firstWord.word.length });
-    usedInStage.add(firstWord.word);
+    if (!canPlaceWord(grid, seedWord.word, dir0, r0, c0)) continue;
+    applyWord(grid, seedWord.word, dir0, r0, c0);
+    placed.push({ word: seedWord.word, clue: seedWord.clue, dir: dir0, r: r0, c: c0, len: seedWord.word.length });
+    usedInStage.add(seedWord.word);
 
-    // 2단계: 교차 확장 루프 (최대 100 스텝)
-    for (let step = 0; step < 100; step++) {
-      if (placed.length >= targetWordCount) break;
+    // 단어 점진적 추가 (최대 150 반복)
+    for (let iter = 0; iter < 150; iter++) {
+      if (placed.length >= targetWords) break;
 
-      const shuffledPlaced = shuffle(placed);
-      let added = false;
+      let curMinR = GRID_SIZE, curMaxR = 0, curMinC = GRID_SIZE, curMaxC = 0;
+      for (const p of placed) {
+        curMinR = Math.min(curMinR, p.r);
+        curMaxR = Math.max(curMaxR, p.dir === 'down' ? p.r + p.len - 1 : p.r);
+        curMinC = Math.min(curMinC, p.c);
+        curMaxC = Math.max(curMaxC, p.dir === 'across' ? p.c + p.len - 1 : p.c);
+      }
 
-      for (const p of shuffledPlaced) {
-        if (added) break;
+      const validPlacements = [];
+      for (const p of placed) {
         const oppDir = p.dir === 'across' ? 'down' : 'across';
+        for (let i = 0; i < p.len; i++) {
+          const char = p.word[i];
+          const ir = p.dir === 'across' ? p.r : p.r + i;
+          const ic = p.dir === 'across' ? p.c + i : p.c;
 
-        const indices = shuffle(Array.from({ length: p.len }, (_, i) => i));
-        for (const idx of indices) {
-          if (added) break;
-          const char = p.word[idx];
-          const intersectR = p.dir === 'across' ? p.r : p.r + idx;
-          const intersectC = p.dir === 'across' ? p.c + idx : p.c;
-
-          // 이미 이 위치를 교차하고 있는 다른 단어가 있는지 확인
-          const alreadyCrossed = placed.some(other => {
+          const already = placed.some(other => {
             if (other.dir !== oppDir) return false;
-            if (oppDir === 'down') {
-              return other.c === intersectC && intersectR >= other.r && intersectR < other.r + other.len;
-            } else {
-              return other.r === intersectR && intersectC >= other.c && intersectC < other.c + other.len;
-            }
+            return oppDir === 'down'
+              ? (other.c === ic && ir >= other.r && ir < other.r + other.len)
+              : (other.r === ir && ic >= other.c && ic < other.c + other.len);
           });
-          if (alreadyCrossed) continue;
+          if (already) continue;
 
-          const wordMatches = shuffle(charIndex[char] || []).slice(0, 25);
-          for (const match of wordMatches) {
-            const candidate = match.item;
-            if (usedInStage.has(candidate.word)) continue;
+          const matches = charIndex[char] || [];
+          for (const m of matches) {
+            const cand = m.item;
+            if (usedInStage.has(cand.word)) continue;
+            const sr = oppDir === 'down' ? ir - m.pos : ir;
+            const sc = oppDir === 'across' ? ic - m.pos : ic;
+            if (canPlaceWord(grid, cand.word, oppDir, sr, sc)) {
+              const er = oppDir === 'down' ? sr + cand.word.length - 1 : sr;
+              const ec = oppDir === 'across' ? sc + cand.word.length - 1 : sc;
 
-            const charPosInCandidate = match.pos;
-            const startR = oppDir === 'down' ? intersectR - charPosInCandidate : intersectR;
-            const startC = oppDir === 'across' ? intersectC - charPosInCandidate : intersectC;
+              // 외곽 확장 및 빈 구역 진출 시 높은 가중치 부여
+              let weight = 1;
+              if (sr < curMinR || er > curMaxR) weight += 2.5;
+              if (sc < curMinC || ec > curMaxC) weight += 2.5;
+              if (sr <= 1 || er >= 8) weight += 2.0;
+              if (sc <= 1 || ec >= 8) weight += 2.0;
 
-            if (canPlaceWord(grid, candidate.word, oppDir, startR, startC)) {
-              applyWord(grid, candidate.word, oppDir, startR, startC);
-              placed.push({
-                word: candidate.word,
-                clue: candidate.clue,
-                dir: oppDir,
-                r: startR,
-                c: startC,
-                len: candidate.word.length
-              });
-              usedInStage.add(candidate.word);
-              added = true;
-              break;
+              validPlacements.push({ cand, dir: oppDir, r: sr, c: sc, len: cand.word.length, weight });
             }
           }
         }
       }
-    }
 
-    // 성공 조건 검사: 목표 문항 수 및 최소 활성 셀 수(minFilledCells) 충족
-    if (placed.length >= targetWordCount) {
-      let filledCells = 0;
-      for (let r = 0; r < GRID_SIZE; r++) {
-        for (let c = 0; c < GRID_SIZE; c++) {
-          if (grid[r][c] !== null) filledCells++;
+      if (validPlacements.length === 0) break;
+
+      // 가중치 룰렛 선택
+      const totalWeight = validPlacements.reduce((sum, v) => sum + v.weight, 0);
+      let rnd = rand() * totalWeight;
+      let chosen = validPlacements[0];
+      for (const vp of validPlacements) {
+        rnd -= vp.weight;
+        if (rnd <= 0) {
+          chosen = vp;
+          break;
         }
       }
 
-      if (filledCells < minFilledCells) {
-        continue;
+      applyWord(grid, chosen.cand.word, chosen.dir, chosen.r, chosen.c);
+      placed.push({
+        word: chosen.cand.word,
+        clue: chosen.cand.clue,
+        dir: chosen.dir,
+        r: chosen.r,
+        c: chosen.c,
+        len: chosen.len
+      });
+      usedInStage.add(chosen.cand.word);
+    }
+
+    if (placed.length >= targetWords) {
+      let filled = 0;
+      let minR = GRID_SIZE, maxR = 0, minC = GRID_SIZE, maxC = 0;
+      for (let r = 0; r < GRID_SIZE; r++) {
+        for (let c = 0; c < GRID_SIZE; c++) {
+          if (grid[r][c] !== null) {
+            filled++;
+            minR = Math.min(minR, r);
+            maxR = Math.max(maxR, r);
+            minC = Math.min(minC, c);
+            maxC = Math.max(maxC, c);
+          }
+        }
       }
 
-      // 3) 모든 단어가 최소 1개 이상 다른 단어와 교차하는지 전수 검증
+      if (filled < minFilled) continue;
+      // 전역 커버리지: 사방 외곽에 최소 2행/열 이내 접근 보장 (한쪽 쏠림 방지)
+      if (minR > 2 || maxR < 7 || minC > 2 || maxC < 7) continue;
+
+      // 연결성 검증: 모든 단어가 최소 1개 이상 다른 단어와 교차
       const allCrossed = placed.every(w => {
         for (let k = 0; k < w.len; k++) {
           const rr = w.dir === 'across' ? w.r : w.r + k;
@@ -207,45 +223,37 @@ function generateDense10x10Puzzle(seed, targetWordCount, minFilledCells, allowed
         }
         return false;
       });
-      if (!allCrossed) {
-        continue;
-      }
+      if (!allCrossed) continue;
 
-      // 최종 단어 및 셀 번호 부여 (전통 십자말풀이 번호 매김 표준)
+      // 번호 부여 (전통 십자말풀이 표준)
       const cellNumbers = {};
       let numCounter = 1;
-
       for (let r = 0; r < GRID_SIZE; r++) {
         for (let c = 0; c < GRID_SIZE; c++) {
-          const startsWord = placed.some(p => p.r === r && p.c === c);
-          if (startsWord) {
+          if (placed.some(p => p.r === r && p.c === c)) {
             cellNumbers[`${r},${c}`] = numCounter++;
           }
         }
       }
 
-      const finalWords = placed.map(p => {
-        const num = cellNumbers[`${p.r},${p.c}`];
-        return {
-          num,
-          dir: p.dir,
-          dirKo: p.dir === 'across' ? '가로' : '세로',
-          r: p.r,
-          c: p.c,
-          len: p.len,
-          word: p.word,
-          clue: p.clue
-        };
-      });
-
+      const finalWords = placed.map(p => ({
+        num: cellNumbers[`${p.r},${p.c}`],
+        dir: p.dir,
+        dirKo: p.dir === 'across' ? '가로' : '세로',
+        r: p.r,
+        c: p.c,
+        len: p.len,
+        word: p.word,
+        clue: p.clue
+      }));
       finalWords.sort((a, b) => a.num - b.num || (a.dir === 'across' ? -1 : 1));
 
       return {
-        seed,
         grid,
         words: finalWords,
         wordCount: finalWords.length,
-        filledCells
+        filledCells: filled,
+        minR, maxR, minC, maxC
       };
     }
   }
@@ -256,87 +264,41 @@ function generateDense10x10Puzzle(seed, targetWordCount, minFilledCells, allowed
 // 100단계 전수 생성 파이프라인
 function generateAll100Stages() {
   console.log("=================================================");
-  console.log("10x10 고밀도 100단계 전역 비중복 퍼즐 전수 생성 시작...");
+  console.log("10x10 초고밀도 100단계 전역 비중복 퍼즐 전수 생성 시작...");
   console.log("=================================================");
 
   const globalUsedWords = new Set();
   const allStages = [];
+  let totalWords = 0, totalFilled = 0;
 
   for (let stage = 1; stage <= 10; stage++) {
-    // 스테이지별 목표 문항 수 및 최소 활성 셀 수 설정
-    // 10x10 격자를 촘촘하게 채우면서도(11~13문항, 26~32칸), 전역 100단계 100% 비중복 달성
-    let targetWords = 12;
-    let minFilled = 28;
-    let allowedLevels = [1, 2, 3];
-
-    if (stage <= 3) {
-      targetWords = 12;
-      minFilled = 28;
-      allowedLevels = [1, 2, 3];
-    } else if (stage <= 6) {
-      targetWords = 13;
-      minFilled = 28;
-      allowedLevels = [1, 2, 3, 4];
-    } else {
-      targetWords = 13;
-      minFilled = 28;
-      allowedLevels = [1, 2, 3, 4, 5];
-    }
-
-    const stageVocab = FULL_VOCAB.filter(v => allowedLevels.includes(v.level));
-    console.log(`\n[스테이지 ${stage}] 목표 문항: ${targetWords}개, 최소 활성칸: ${minFilled}칸, 후보 어휘: ${stageVocab.length}개`);
+    console.log(`\n[스테이지 ${stage}] 시작 (누적 고유 단어: ${globalUsedWords.size}개)`);
 
     for (let level = 1; level <= 10; level++) {
       const globalLevel = (stage - 1) * 10 + level;
-      let seed = globalLevel * 911 + 107;
+      let seed = globalLevel * 1009 + 317;
       let puzzle = null;
 
-      // 1차 시도: 스테이지 어휘로 목표 문항 시도
-      let tries = 0;
-      while (!puzzle && tries < 80) {
-        puzzle = generateDense10x10Puzzle(seed, targetWords, minFilled, stageVocab, globalUsedWords);
-        seed += 17;
-        tries++;
-      }
+      // 단계별 점진적 타깃 완화 (최대 20문항/48칸 -> 최소 13문항/30칸 안전망)
+      const targets = [
+        { words: 20, filled: 48 },
+        { words: 19, filled: 46 },
+        { words: 18, filled: 44 },
+        { words: 17, filled: 42 },
+        { words: 16, filled: 39 },
+        { words: 15, filled: 36 },
+        { words: 14, filled: 33 },
+        { words: 13, filled: 30 }
+      ];
 
-      // 2차 시도: 전체 어휘 풀로 보충
-      if (!puzzle) {
-        let fallbackTries = 0;
-        while (!puzzle && fallbackTries < 80) {
-          puzzle = generateDense10x10Puzzle(seed, targetWords, minFilled - 2, FULL_VOCAB, globalUsedWords);
-          seed += 11;
-          fallbackTries++;
+      for (const t of targets) {
+        let tries = 0;
+        while (!puzzle && tries < 70) {
+          puzzle = generateDense10x10Puzzle(seed, t.words, t.filled, FULL_VOCAB, globalUsedWords);
+          seed += 23;
+          tries++;
         }
-      }
-
-      // 3차 시도: 12문항으로 완화
-      if (!puzzle) {
-        let softTries = 0;
-        while (!puzzle && softTries < 100) {
-          puzzle = generateDense10x10Puzzle(seed, 12, 26, FULL_VOCAB, globalUsedWords);
-          seed += 7;
-          softTries++;
-        }
-      }
-
-      // 4차 시도: 11문항으로 완화
-      if (!puzzle) {
-        let softTries2 = 0;
-        while (!puzzle && softTries2 < 120) {
-          puzzle = generateDense10x10Puzzle(seed, 11, 25, FULL_VOCAB, globalUsedWords);
-          seed += 5;
-          softTries2++;
-        }
-      }
-
-      // 5차 시도: 10문항으로 최종 안전망
-      if (!puzzle) {
-        let softTries3 = 0;
-        while (!puzzle && softTries3 < 150) {
-          puzzle = generateDense10x10Puzzle(seed, 10, 23, FULL_VOCAB, globalUsedWords);
-          seed += 3;
-          softTries3++;
-        }
+        if (puzzle) break;
       }
 
       if (!puzzle) {
@@ -347,9 +309,11 @@ function generateAll100Stages() {
       puzzle.level = level;
       puzzle.globalLevel = globalLevel;
 
-      // 생성된 퍼즐의 단어들을 글로벌 세트에 등록 (중복 출제 원천 차단)
+      // 생성된 퍼즐의 단어들을 글로벌 세트에 등록 (전역 100% 무중복 보장)
       puzzle.words.forEach(w => globalUsedWords.add(w.word));
       allStages.push(puzzle);
+      totalWords += puzzle.words.length;
+      totalFilled += puzzle.filledCells;
 
       process.stdout.write(`.${puzzle.words.length}(${puzzle.filledCells}칸) `);
       if (level === 10) console.log(`\n -> [스테이지 ${stage} 완료, 누적 고유 단어: ${globalUsedWords.size}개]`);
@@ -357,8 +321,10 @@ function generateAll100Stages() {
   }
 
   console.log("\n=================================================");
-  console.log(`[생성 성공!] 100단계 전체 고밀도 생성 완료!`);
+  console.log(`[생성 성공!] 100단계 전체 초고밀도 퍼즐 생성 완료!`);
   console.log(`총 배치된 고유 단어 수: ${globalUsedWords.size}개 (전 단계 100% 비중복)`);
+  console.log(`평균 문항 수: ${(totalWords / 100).toFixed(1)}개 / 단계 (최소: ${Math.min(...allStages.map(s => s.words.length))}, 최대: ${Math.max(...allStages.map(s => s.words.length))})`);
+  console.log(`평균 활성 칸 수: ${(totalFilled / 100).toFixed(1)}칸 / 100칸 (기존 28.7칸 대비 대폭 증가!)`);
   console.log("=================================================");
 
   const outJson = path.join(__dirname, 'puzzles_100_10x10.json');

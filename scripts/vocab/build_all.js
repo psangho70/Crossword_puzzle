@@ -43,6 +43,31 @@ const lExtra29 = require('./level_extra29');
 const lExtra30 = require('./level_extra30');
 const lExtra31 = require('./level_extra31');
 const lExtra32 = require('./level_extra32');
+const lExtra33 = require('./level_extra33');
+const lExtra34 = require('./level_extra34');
+const lExtra35 = require('./level_extra35');
+const lExtra36 = require('./level_extra36');
+const lExtra37 = require('./level_extra37');
+const lExtra38 = require('./level_extra38');
+const lExtra39 = require('./level_extra39');
+const lExtra40 = require('./level_extra40');
+const lExtra41 = require('./level_extra41');
+const lExtra42 = require('./level_extra42');
+const lExtra43 = require('./level_extra43');
+const lExtra44 = require('./level_extra44');
+const lExtra45 = require('./level_extra45');
+const lExtra46 = require('./level_extra46');
+const lExtra47 = require('./level_extra47');
+const lExtra48 = require('./level_extra48');
+const lExtra49 = require('./level_extra49');
+const lExtra50 = require('./level_extra50');
+const lExtra51 = require('./level_extra51');
+const lExtra52 = require('./level_extra52');
+const lExtra53 = require('./level_extra53');
+const lExtra54 = require('./level_extra54');
+const lExtra55 = require('./level_extra55');
+const lExtra56 = require('./level_extra56');
+const lExtra57 = require('./level_extra57');
 
 // 기존 test_engine.js 단어도 가져와서 중복되지 않는 것 흡수
 let existingVocab = [];
@@ -99,6 +124,31 @@ const allCandidates = [
   ...lExtra30,
   ...lExtra31,
   ...lExtra32,
+  ...lExtra33,
+  ...lExtra34,
+  ...lExtra35,
+  ...lExtra36,
+  ...lExtra37,
+  ...lExtra38,
+  ...lExtra39,
+  ...lExtra40,
+  ...lExtra41,
+  ...lExtra42,
+  ...lExtra43,
+  ...lExtra44,
+  ...lExtra45,
+  ...lExtra46,
+  ...lExtra47,
+  ...lExtra48,
+  ...lExtra49,
+  ...lExtra50,
+  ...lExtra51,
+  ...lExtra52,
+  ...lExtra53,
+  ...lExtra54,
+  ...lExtra55,
+  ...lExtra56,
+  ...lExtra57,
   ...existingVocab
 ];
 

@@ -35,8 +35,8 @@ puzzles.forEach((p, idx) => {
     }
   }
 
-  // 2. 단어 개수 검증 (10 ~ 15개)
-  if (p.words.length < 10 || p.words.length > 15) {
+  // 2. 단어 개수 검증 (고밀도 12 ~ 25개)
+  if (p.words.length < 12 || p.words.length > 25) {
     console.error(`[오류] 단계 ${globalLevel}: 단어 개수가 범위를 벗어남 (${p.words.length}개)`);
     errors++;
   }
