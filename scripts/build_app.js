@@ -1279,6 +1279,32 @@ const htmlContent = `<!DOCTYPE html>
     let currentWordInputs = [];
     let keyboardKeys = [];
     let ttsSpeaking = false;
+    let currentAudio = null;
+    let clueAudioTimer = null;
+
+    function stopCurrentAudio() {
+      if (clueAudioTimer) {
+        clearTimeout(clueAudioTimer);
+        clueAudioTimer = null;
+      }
+      if (currentAudio) {
+        try {
+          currentAudio.pause();
+          currentAudio.currentTime = 0;
+        } catch (e) {}
+        currentAudio = null;
+      }
+      if ('speechSynthesis' in window) {
+        try {
+          window.speechSynthesis.cancel();
+        } catch (e) {}
+      }
+      ttsSpeaking = false;
+      const ttsBtnElem = document.getElementById('btnTts');
+      const ttsToastElem = document.getElementById('ttsToast');
+      if (ttsBtnElem) ttsBtnElem.classList.remove('speaking');
+      if (ttsToastElem) ttsToastElem.classList.remove('active');
+    }
 
     // 4. UI 엘리먼트 참조
     const topbarStageLevel = document.getElementById('topbarStageLevel');
@@ -1334,6 +1360,7 @@ const htmlContent = `<!DOCTYPE html>
 
     // 6. 퍼즐 로드
     function loadPuzzle(stage, level) {
+      stopCurrentAudio();
       currentStage = stage;
       currentLevel = level;
       localStorage.setItem(STORAGE_KEY_STAGE, currentStage);
@@ -1437,6 +1464,7 @@ const htmlContent = `<!DOCTYPE html>
     }
 
     function selectWord(wIdx) {
+      stopCurrentAudio();
       selectedWordIndex = wIdx;
       const wordObj = currentPuzzle.words[selectedWordIndex];
       const isSolved = solvedWords.has(selectedWordIndex);
@@ -1626,6 +1654,7 @@ const htmlContent = `<!DOCTYPE html>
       const enteredWord = currentWordInputs.join('');
 
       if (enteredWord === wordObj.word) {
+        stopCurrentAudio();
         sound.playCorrect();
         solvedWords.add(selectedWordIndex);
 
@@ -1674,6 +1703,7 @@ const htmlContent = `<!DOCTYPE html>
     }
 
     function onStageClear() {
+      stopCurrentAudio();
       sound.playStageClear();
       clearedSet.add(\`\${currentStage}-\${currentLevel}\`);
       localStorage.setItem(STORAGE_KEY_CLEARED, JSON.stringify(Array.from(clearedSet)));
@@ -1695,7 +1725,6 @@ const htmlContent = `<!DOCTYPE html>
     });
 
     // 8. 음성 안내 (TTS 및 MP3 연동)
-    let currentAudio = null;
     function speakText(text, mp3File, onEnd) {
       if (!soundEnabled) {
         if (onEnd) onEnd();
@@ -1736,9 +1765,7 @@ const htmlContent = `<!DOCTYPE html>
 
     function fallbackSpeech(text, onEnd) {
       if (!('speechSynthesis' in window) || !soundEnabled) {
-        ttsSpeaking = false;
-        btnTts.classList.remove('speaking');
-        ttsToast.classList.remove('active');
+        stopCurrentAudio();
         if (onEnd) onEnd();
         return;
       }
@@ -1767,6 +1794,7 @@ const htmlContent = `<!DOCTYPE html>
     }
 
     function speakCurrentClue() {
+      stopCurrentAudio();
       const wordObj = currentPuzzle.words[selectedWordIndex];
       if (!wordObj) return;
 
@@ -1774,7 +1802,10 @@ const htmlContent = `<!DOCTYPE html>
       const clue = wordObj.clue;
 
       speakText(prefix, wordObj.pa, () => {
-        setTimeout(() => speakText(clue, wordObj.ca), 250);
+        clueAudioTimer = setTimeout(() => {
+          clueAudioTimer = null;
+          speakText(clue, wordObj.ca);
+        }, 250);
       });
     }
 
