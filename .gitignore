@@ -1,0 +1,20 @@
+﻿# 안드로이드 빌드 캐시 및 산출물
+.gradle/
+build/
+android/.gradle/
+android/build/
+android/app/build/
+android/local.properties
+android/.idea/
+android/*.iml
+
+# GitHub 100MB 제한 초과 방지: 빌드된 APK 파일
+*.apk
+
+# 안드로이드 assets에 복사된 중복 오디오 (루트 audio/에 원본 존재)
+android/app/src/main/assets/audio/
+
+# OS/IDE 임시 파일
+.DS_Store
+Thumbs.db
+node_modules/
