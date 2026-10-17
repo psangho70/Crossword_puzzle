@@ -138,22 +138,27 @@
       color: #FFFFFF;
       box-shadow: 0 2px 4px rgba(29, 78, 216, 0.18);
       flex-shrink: 0;
+      white-space: nowrap;
+      overflow: hidden;
     }
 
     .brand-logo-area {
       display: flex;
       align-items: center;
       gap: 6px;
+      white-space: nowrap;
+      overflow: hidden;
     }
 
     .brand-icon {
       font-size: 15px;
       line-height: 1;
       filter: drop-shadow(0 1px 2px rgba(0,0,0,0.25));
+      flex-shrink: 0;
     }
 
     .brand-title {
-      font-size: 13.5px;
+      font-size: 13.5px !important;
       font-weight: 900;
       letter-spacing: -0.3px;
       color: #FFFFFF;
@@ -161,6 +166,7 @@
       display: flex;
       align-items: center;
       gap: 4px;
+      white-space: nowrap;
     }
 
     .brand-highlight {
@@ -169,7 +175,7 @@
     }
 
     .brand-sub-badge {
-      font-size: 10px;
+      font-size: 9.5px !important;
       font-weight: 800;
       background: rgba(255, 255, 255, 0.22);
       border: 1px solid rgba(255, 255, 255, 0.4);
@@ -178,6 +184,8 @@
       border-radius: 9999px;
       letter-spacing: -0.2px;
       line-height: 1.3;
+      white-space: nowrap;
+      flex-shrink: 0;
     }
 
     /* =========================================================
@@ -276,15 +284,19 @@
       align-items: center;
       justify-content: center;
       width: 100%;
-      flex-shrink: 1;
+      flex: 1 1 auto;
       min-height: 0;
+      overflow: hidden;
+      position: relative;
+      z-index: 1;
     }
 
     .board-grid {
-      width: 100%;
-      max-width: min(100%, 390px);
+      width: auto;
+      height: 100%;
+      max-width: 100%;
+      max-height: 45vh;
       aspect-ratio: 1 / 1;
-      max-height: 46vh;
       display: grid;
       grid-template-columns: repeat(10, 1fr);
       grid-template-rows: repeat(10, 1fr);
@@ -293,6 +305,7 @@
       padding: 2.5px;
       border-radius: 10px;
       box-shadow: inset 0 1px 4px rgba(0,0,0,0.04);
+      margin: auto;
     }
 
     .cell {
@@ -363,6 +376,9 @@
       flex-direction: column;
       gap: 3px;
       flex-shrink: 0;
+      max-height: 25vh;
+      position: relative;
+      z-index: 2;
     }
 
     .clue-top-row {
@@ -371,6 +387,12 @@
       justify-content: space-between;
       width: 100%;
       gap: 6px;
+    }
+
+    .clue-actions-wrap {
+      display: flex;
+      align-items: center;
+      gap: 4px;
     }
 
     .clue-tag {
@@ -387,18 +409,41 @@
       flex-shrink: 0;
     }
 
+    .clue-font-btn {
+      background: #FEF9C3;
+      color: #854D0E;
+      border: 1.5px solid #FACC15;
+      border-radius: 9999px;
+      padding: 2px 8px;
+      font-size: 11.5px;
+      font-weight: 900;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 3px;
+      white-space: nowrap;
+      flex-shrink: 0;
+      height: 26px;
+      box-sizing: border-box;
+      transition: all 0.15s ease;
+    }
+    .clue-font-btn:active {
+      transform: scale(0.95);
+      background: #FEF08A;
+    }
+
     .tts-btn {
       background: #EFF6FF;
       color: var(--primary-color);
       border: 1.5px solid #93C5FD;
       border-radius: 9999px;
-      padding: 2px 10px;
-      font-size: calc(12px * var(--font-scale));
-      font-weight: 800;
+      padding: 2px 9px;
+      font-size: 11.5px;
+      font-weight: 900;
       cursor: pointer;
       display: inline-flex;
       align-items: center;
-      gap: 4px;
+      gap: 3px;
       white-space: nowrap;
       flex-shrink: 0;
       height: 26px;
@@ -418,8 +463,12 @@
       font-size: calc(14px * var(--font-scale));
       font-weight: 800;
       color: var(--text-color);
-      line-height: 1.32;
+      line-height: 1.35;
       word-break: keep-all;
+      max-height: 52px;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+      padding-right: 2px;
     }
 
     /* 정답 조합 슬롯 (단독 행으로 가로 폭 100% 여유 배치) */
@@ -1029,9 +1078,14 @@
           <span id="clueDirIcon">➡</span>
           <span id="clueTitle">가로 1번</span>
         </div>
-        <button class="tts-btn" id="btnTts">
-          <span>🔊</span> <span>문제 듣기</span>
-        </button>
+        <div class="clue-actions-wrap">
+          <button class="clue-font-btn" id="btnClueFontQuick" title="문제 글자 크기 3단계 변경 (보통/크게/특대)">
+            <span>🔍</span> <span id="clueFontQuickLabel">글자 보통</span>
+          </button>
+          <button class="tts-btn" id="btnTts">
+            <span>🔊</span> <span>문제 듣기</span>
+          </button>
+        </div>
       </div>
       <div class="clue-text" id="clueText">
         문제를 불러오는 중입니다...
@@ -1309,6 +1363,8 @@
     const clueDirIcon = document.getElementById('clueDirIcon');
     const clueTitle = document.getElementById('clueTitle');
     const clueText = document.getElementById('clueText');
+    const btnClueFontQuick = document.getElementById('btnClueFontQuick');
+    const clueFontQuickLabel = document.getElementById('clueFontQuickLabel');
     const btnTts = document.getElementById('btnTts');
     const ttsToast = document.getElementById('ttsToast');
     const slotsContainer = document.getElementById('slotsContainer');
@@ -1895,6 +1951,34 @@
     btnCloseSettings.addEventListener('click', closeSettingsModal);
     btnConfirmSettings.addEventListener('click', closeSettingsModal);
 
+    function updateClueFontQuickUI() {
+      if (!clueFontQuickLabel) return;
+      if (Math.abs(fontScale - 1.0) < 0.05) {
+        clueFontQuickLabel.textContent = '글자 보통';
+      } else if (Math.abs(fontScale - 1.15) < 0.05) {
+        clueFontQuickLabel.textContent = '글자 크게';
+      } else {
+        clueFontQuickLabel.textContent = '글자 특대';
+      }
+    }
+    updateClueFontQuickUI();
+
+    if (btnClueFontQuick) {
+      btnClueFontQuick.addEventListener('click', () => {
+        sound.playTap();
+        if (Math.abs(fontScale - 1.0) < 0.05) {
+          fontScale = 1.15;
+        } else if (Math.abs(fontScale - 1.15) < 0.05) {
+          fontScale = 1.30;
+        } else {
+          fontScale = 1.0;
+        }
+        localStorage.setItem(STORAGE_KEY_FONT, fontScale.toString());
+        document.documentElement.style.setProperty('--font-scale', fontScale.toString());
+        updateSettingsUI();
+      });
+    }
+
     function updateSettingsUI() {
       document.querySelectorAll('.scale-opt-btn').forEach(btn => {
         const sc = parseFloat(btn.dataset.scale);
@@ -1902,6 +1986,7 @@
       });
       btnToggleAutoSpeak.textContent = autoSpeak ? '켜짐' : '꺼짐';
       btnToggleAutoSpeak.style.color = autoSpeak ? '#15803D' : '#64748B';
+      updateClueFontQuickUI();
     }
 
     document.querySelectorAll('.scale-opt-btn').forEach(btn => {

@@ -77,6 +77,9 @@ class MainActivity : ComponentActivity() {
                 useWideViewPort = true
                 loadWithOverviewMode = true
 
+                // 스마트폰 OS 시스템 폰트 크기(Font Scale) 무제한 확대 상속 차단 (레이아웃 파괴 원천 방지)
+                textZoom = 100
+
                 // 시니어 오터치로 인한 화면 확대 방지
                 setSupportZoom(false)
                 builtInZoomControls = false
