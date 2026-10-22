@@ -1,8 +1,9 @@
-# 청춘 10x10 가로세로 낱말 퍼즐 100 🧩 (v1.0.3)
+# 청춘 10x10 가로세로 낱말 퍼즐 100 🧩 (v1.0.4)
 
 > **GHAILab 시니어 케어 솔루션** — 어르신을 위한 큰 글자, 10×10 대형 퍼즐판, 100단계 900문항 100% 무중복 어휘, 사전 녹음 MP3 문제 듣기 및 안드로이드 네이티브 앱 지원 크로스워드 퍼즐
 
-🔗 **웹 라이브 서비스 바로가기**: [https://psangho70.github.io/Crossword_puzzle/](https://psangho70.github.io/Crossword_puzzle/)
+🔗 **웹 라이브 서비스 바로가기**: [https://psangho70.github.io/Crossword_puzzle/](https://psangho70.github.io/Crossword_puzzle/)  
+📱 **최신 안드로이드 APK 다운로드**: [GitHub Releases v1.0.4 배포본](https://github.com/psangho70/Crossword_puzzle/releases/tag/v1.0.4)
 
 ---
 
@@ -45,9 +46,11 @@
 - 스마트폰 홈 화면 추가 및 안드로이드 설치 시 원형/적응형(Adaptive) 아이콘 완벽 지원.
 - 상단 헤더에 GHAILab 심볼 및 브랜드 로고 상시 고정.
 
-### 7. 안드로이드 네이티브 앱 (v1.0.3 배포)
+### 7. 안드로이드 네이티브 앱 (v1.0.4 배포)
 - Google Play 스토어 및 사이드로딩 설치가 가능한 네이티브 APK 구축 완료 (`android/`).
+- **GHAILab 신규 원형 아이콘 & Safe Zone 72% 보정**으로 삼성 갤럭시 One UI 등 모든 안드로이드 기기에서 글자 및 배지 잘림 없이 선명하게 표시.
 - Kotlin 기반 WebView 하이브리드 앱으로, 안드로이드 시스템 폰트 확대 강제 적용을 방지하기 위해 `settings.textZoom = 100` 및 하드웨어 뒤로가기 버튼 최적화.
+- **[GitHub Releases v1.0.4](https://github.com/psangho70/Crossword_puzzle/releases/tag/v1.0.4)**에서 APK 직접 다운로드 지원.
 
 ---
 
@@ -61,17 +64,18 @@ Crossword_puzzle/
 ├── icon.svg                   # GHAILab 통합 브랜드 벡터 아이콘
 ├── icon_512.png               # 512x512 고해상도 앱 아이콘
 ├── icon_512_round.png         # 512x512 라운드 마스크 아이콘
+├── icon_512_round_GHAILab.png # 2048x2048 신규 GHAILab 원형 마스터 아이콘
 ├── ghailab_logo.png           # GHAILab CI 심볼 로고
 ├── audio/                     # 900개 전 문항 고품질 사전 생성 MP3 오디오 보관소 (c001_a01.mp3 ~ c100_d10.mp3)
 │
-├── android/                   # 안드로이드 네이티브 앱 프로젝트 (v1.0.3, Kotlin, Gradle 8.13)
+├── android/                   # 안드로이드 네이티브 앱 프로젝트 (v1.0.4, Kotlin, Gradle 8.13)
 │   ├── app/
-│   │   ├── build.gradle.kts   # v1.0.3 버전 설정, minify/shrink 설정
+│   │   ├── build.gradle.kts   # v1.0.4 버전 설정 (versionCode 5), minifyEnabled 설정
 │   │   └── src/main/
 │   │       ├── AndroidManifest.xml
-│   │       ├── assets/        # 웹앱 통합 빌드본 동기화 에셋 (index.html, icon.svg, manifest.json)
+│   │       ├── assets/        # 웹앱 통합 빌드본 동기화 에셋 (index.html, icon.png, icon.svg, manifest.json)
 │   │       ├── java/.../MainActivity.kt  # textZoom 고정, 가상키보드 차단, 뒤로가기 제어
-│   │       └── res/           # 6개 해상도별 mipmap 적응형 런처 아이콘 세트
+│   │       └── res/           # 5개 밀도별 mipmap 및 Adaptive Icon(drawable) 런처 리소스 세트
 │   └── gradlew.bat            # 윈도우용 Gradle 빌드 래퍼
 │
 ├── scripts/                   # 퍼즐 생성, 검증, 오디오 합성 및 빌드 자동화 스크립트
@@ -80,12 +84,15 @@ Crossword_puzzle/
 │   ├── generator_10x10.js     # 10x10 백트래킹 100단계 무중복 퍼즐 생성 엔진
 │   ├── verify_10x10.js        # 100단계 900문항 전수 무중복 유효성 검증기
 │   ├── puzzles_100_10x10.json # 100단계 10x10 완성 퍼즐 데이터셋 (900문항, 중복 0건)
+│   ├── generate_android_icons.ps1 # 안드로이드 전 해상도 리소스 자동 생성기
+│   ├── upload_release.js      # GitHub Releases APK 자동 업로드 스크립트
 │   ├── generate_audio.js      # 900개 문항 MP3 음성 병렬 사전 생성기
 │   ├── build_app.js           # 10x10 PWA index.html 원클릭 통합 빌더
 │   └── server.js              # 로컬 테스트용 HTTP 정적 파일 서버
 │
 ├── docs/                      # 개발 기획서, 분석서 및 작업 완료 보고서
-└── SeniorCrossword_100.apk    # 빌드된 최신 안드로이드 네이티브 설치 파일 (v1.0.3)
+├── 청춘10x10낱말퍼즐_100.apk  # 최신 안드로이드 네이티브 설치 파일 (v1.0.4)
+└── SeniorCrossword_100.apk    # 최신 안드로이드 네이티브 설치 파일 (v1.0.4)
 ```
 
 ---
@@ -119,15 +126,20 @@ node scripts/build_app.js
 `android` 디렉토리에서 Gradle을 통해 릴리즈 APK를 생성합니다:
 ```bash
 cd android
-./gradlew assembleRelease
-# 산출물 위치: android/app/build/outputs/apk/release/app-release-unsigned.apk
+./gradlew assembleDebug
+# 산출물 위치: android/app/build/outputs/apk/debug/app-debug.apk
 ```
 
 ---
 
 ## 📋 버전 릴리즈 히스토리
 
-- **v1.0.3 (최신)**
+- **v1.0.4 (최신)**
+  - 신규 GHAILab CI & 청춘 낱말 퍼즐 통합 원형 아이콘(`icon_512_round_GHAILab.png`) 반영
+  - 원형 외곽 투명 알파 마스킹으로 모서리 흰색 잔상 완전 제거
+  - 안드로이드 Adaptive Icon Safe Zone(72%) 규격 적용으로 제조사별 원형/조약돌 마스크 시 외곽 요소 잘림 방지
+  - GitHub Releases를 통한 123.8MB 완전 오프라인 APK 직접 다운로드 제공
+- **v1.0.3**
   - 스마트폰 초대형 폰트 및 화면 확대(OS 시스템 폰트 최대 200%) 환경 완벽 대응 4-Tier 폰트 방어 체계 적용
   - `min-height`, `clamp()`, `flex-shrink: 0` 기반 레이아웃 겹침/깨짐 제로화
   - 안드로이드 WebView `settings.textZoom = 100` 강제 고정으로 앱 내 돋보기 시스템과의 일관성 확보
